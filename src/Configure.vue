@@ -87,7 +87,7 @@ export default {
 				this.choice_2 ="Create a set of keys for an existing address";
 				this.onClick_2 = ()=>{
 					this.config.action = "new_set_of_keys";
-					this.config.is_existing_address = false;
+					this.config.is_existing_address = true;
 					this.$router.push({name: 'createmasterkey', params:{config:this.config}});
 				};
 				this.choice_3 = "Return previous choice";

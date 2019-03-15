@@ -5,21 +5,32 @@
 	padding:10px;
 	border-radius: 10px;
 	overflow: hidden;
+	font-family: 'Open Sans', sans-serif;
+
 }
 
 .head-page{
 }
+.body{
 
+
+}
+.page-title{
+	padding: 20px;
+	font-size: 20px;
+
+}
 .logo{
 	display: block;
 	margin-left: auto;
 	margin-right: auto;
 }
 
+
+
+
 #intro{
 padding: 20px;
-font-family: 'Open Sans', sans-serif;
-
 
 }
 #drawing{
@@ -28,7 +39,6 @@ font-family: 'Open Sans', sans-serif;
 
 #what-action{
 	padding-bottom: 0px;
-	font-family: 'Open Sans', sans-serif;
 	font-size: 20px;
 
 }
@@ -44,7 +54,6 @@ font-family: 'Open Sans', sans-serif;
 }
 .large-button .label{
 	width: 80%;
-	font-family: 'Open Sans', sans-serif;
 	color:white;
 	display: inline-block;
 	padding: 30px;
@@ -55,4 +64,11 @@ font-family: 'Open Sans', sans-serif;
 }
 .large-button:hover{
 cursor: pointer;
+}
+
+.address-input{
+
+	width: 300px;
+
+
 }
