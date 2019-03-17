@@ -25,9 +25,26 @@
 	margin-left: auto;
 	margin-right: auto;
 }
+.passphrase-width{
+	display: inline-block;
+	width: 650px;
+}
+.icon-download-width{
+	display: inline-block;
+	width: 50px;
+	text-align: center;
 
+}
 
+.owner-width{
+	display: inline-block;
+	width: 200px;
+}
 
+.table-header{
+	color:gray;
+	font-weight: bold; 
+}
 
 #intro{
 padding: 20px;
@@ -63,7 +80,7 @@ padding: 20px;
 	color:gray;
 }
 .large-button:hover{
-cursor: pointer;
+	cursor: pointer;
 }
 
 .address-input{

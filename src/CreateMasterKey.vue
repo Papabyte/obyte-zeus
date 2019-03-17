@@ -37,11 +37,33 @@
 					</div>
 				</div>
 			<div v-if="is_secret_created">
-				Boss master key<EncryptAndDownload type="master" name="boss" :state="states[0]" :onDownload="onDownload" :data="master_private_key" :keys_set_properties="keys_set_properties"/>
-				<div v-for="(item, index) in shamir_secret_shares">
-					{{names[index]}}'s share<EncryptAndDownload type="share" :state="states[index+1]" :onDownload="onDownload" :name="names[index]" :data="shamir_secret_shares[index]" :keys_set_properties="keys_set_properties"/>
+				<div class="key-title">
+					Full master key
 				</div>
-				JSON:  {{json}}
+				<div class="owner-width table-header">Owner</div>
+
+				<div class="passphrase passphrase-width table-header">
+					Passphrase
+				</div>
+				<div class="icon-download-width table-header">
+					<span>Save</span>
+				</div>
+				<EncryptAndDownload type="master" name="boss" :state="states[0]" :onDownload="onDownload" :data="master_private_key" :keys_set_properties="keys_set_properties" />
+				<div class="key-title">
+					Master key shares
+				</div>
+				<div class="owner-width table-header"> Owner</div>
+
+				<div class="passphrase passphrase-width table-header">
+					Passphrase
+				</div>
+				<div class="icon-download-width table-header">
+					<span>Save</span>
+				</div>
+
+				<div v-for="(item, index) in shamir_secret_shares">
+					<EncryptAndDownload type="share" :state="states[index+1]" :onDownload="onDownload" :name="names[index]" :data="shamir_secret_shares[index]" :keys_set_properties="keys_set_properties" />
+				</div>
 			</div>
 			<div v-if="is_everything_saved">
 				Operation complete
@@ -222,5 +244,14 @@ export default {
 	#name-shares{
 		padding-top: 30px;
 		padding-left: 20px;
+	}
+
+	.key-title{
+		padding-top: 50px;
+		padding-bottom: 30px;
+		text-align: center;
+		font-size: 20px;
+		font-weight: bold;
+		color: rgb(114, 5, 5);
 	}
 </style>

@@ -15,9 +15,9 @@
 		"vuex-router-sync": "^5.0.0",
 		"secp256k1": "3.6.2",
 		"byteball": "0.1.2",
-		"shamirs-secret-sharing":"1.0.0",
-		"eff-diceware-passphrase":"1.0.0",
-		"aes256":"1.0.4"
+		"shamirs-secret-sharing": "1.0.0",
+		"eff-diceware-passphrase": "1.0.0",
+		"aes256": "1.0.4"
 	},
 	"devDependencies": {
 		"@vue/cli-plugin-babel": "^3.5.1",
