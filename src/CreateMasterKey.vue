@@ -1,18 +1,18 @@
 <template>
 	<div id="create-master-key" class="main-page">
-			<HeadPage/>
+		<HeadPage/>
 
-		<div class="page-title">New set of keys creation</div>
+		<div class="page-title">New set of keys creation {{is_secret_created ? " for " + address : ""}}</div>
 		<hr />
 		<div v-if="!is_secret_created">
-			<div v-if="!config.is_existing_address" id="input-address">
+			<div v-if="config.is_existing_address" id="input-address">
 					<div class="action-title">
 						Existing address
 					</div>
 					Enter the address of your existing oracle or address for which you want to create a set of keys:
 					<input type="text" v-model="address" placeholder="ex: GMHFBTV6D3R3TJ5EJAAUM55EXWNXCJIT" class="address-input">
 			</div>
-			<div v-if="!config.is_existing_address" id="shamir-config">
+			<div v-if="is_valid_address" id="shamir-config">
 				<div class="action-title">
 					Shared secret configuration
 				</div>
@@ -74,7 +74,7 @@
 				</div>
 
 				<div v-for="(item, index) in shamir_secret_shares">
-					<EncryptAndDownload type="share" :state="states[index+1]" :onDownload="onDownload" :name="names[index]" :data="shamir_secret_shares[index]" :keys_set_properties="keys_set_properties" />
+					<EncryptAndDownload  type="share" :state="states[index+1]" :onDownload="onDownload" :name="names[index]" :data="shamir_secret_shares[index]" :keys_set_properties="keys_set_properties" />
 					<hr v-if="index!=(shamir_secret_shares.length-1)" class="download-separator" />
 				</div>
 
@@ -89,16 +89,16 @@
 				<div class="icon-download-width table-header">
 					<span>Save</span>
 				</div>
-				<EncryptAndDownload type="master" name="IT team" :state="states[shamir_secret_shares.length+1]" :onDownload="onDownload" :data="production_private_key" :keys_set_properties="keys_set_properties" />
+				<EncryptAndDownload type="prod" name="IT team" :state="states[shamir_secret_shares.length+1]" :onDownload="onDownload" :data="production_private_key" :keys_set_properties="keys_set_properties" />
 				<div v-if="is_everything_saved && config.is_existing_address">
-					<CreateAndDownloadDefinitionChangeScript :onDownload="onScriptDownloaded" :address="address" :new_definition_chash="new_definition_chash" />
+					<CreateAndDownloadDefinitionChangeScript :id="id" :onDownload="onScriptDownloaded" :address="address" :new_definition_chash="new_definition_chash" />
 				</div>
-				<div v-if="script_downloaded || !config.is_existing_address" class="status">
+				<div v-if="is_everything_saved && (is_script_downloaded || !config.is_existing_address)" class="status">
 					All steps completed.					
 				</div>
 
 				<div v-if="!is_everything_saved" class="status">
-					{{remaining_savings}} files to save.
+					{{remaining_savings}} files left to save.
 				</div>
 			
 			</div>
@@ -140,11 +140,7 @@ export default {
 			address: null,
 			is_valid_shamir_config: false,
 			master_private_key: null,
-			master_private_key_b64: null,
 			production_private_key: null,
-			production_private_key_b64: null,
-			master_public_key_b64: null,
-			production_public_key_b64: null,
 			new_definition_chash: "",
 			required_shares: 1,
 			total_shares: 2,
@@ -154,15 +150,15 @@ export default {
 			keys_set_properties: {},
 			states:[],
 			full_master_key_owner_name:"",
-			json:"",
-			remaining_savings:0,
-			script_downloaded: false
+			remaining_savings: 0,
+			is_script_downloaded: false
 		}
 	},
 	methods:{
 		onScriptDownloaded: function(){
-			this.script_downloaded = true;
+			this.is_script_downloaded = true;
 		},
+		//each time a file is downloaded we refresh download countdown and set is_everything_saved=true when finished
 		onDownload: function(){
 			this.json = JSON.stringify(this.states);
 			var count = 0;
@@ -190,6 +186,7 @@ export default {
 				return this.is_valid_shamir_config = true;
 
 		},
+		//in this array there is 1 status object for each file to be dowloaded
 		initialize_states_array(length){
 			this.states = [];
 			for(var i = 0; i < length; i++){
@@ -199,9 +196,7 @@ export default {
 		createShamirSecretShares(){
 			const sss = require('shamirs-secret-sharing')
 			this.shamir_secret_shares = sss.split(this.master_private_key, { shares: this.total_shares_number, threshold: Number(this.required_shares) })
-			this.states = [];
 			this.initialize_states_array(this.shamir_secret_shares.length + 2);// number of shares + 1 master key + 1 production key
-			this.json = JSON.stringify(this.states);
 			this.onDownload();
 		}
 	},
@@ -231,6 +226,7 @@ export default {
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
 
+
 		//generation of production and master private keys
 		do {
 			this.master_private_key = crypto.randomBytes(32);
@@ -240,25 +236,20 @@ export default {
 			this.production_private_key = crypto.randomBytes(32);
 		} while (!secp256k1.privateKeyVerify(this.production_private_key))
 
-		this.master_private_key_b64 = this.master_private_key.toString('base64');
-		this.production_private_key_b64 = this.production_private_key.toString('base64');
-
 		//creation of production and master public keys
-		this.master_public_key_b64 = secp256k1.publicKeyCreate(this.master_private_key).toString('base64');
-		this.production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
+		var master_public_key_b64 = secp256k1.publicKeyCreate(this.master_private_key).toString('base64');
+		var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
 
-		this.keys_set_properties.address_definition = getArrDefinition(this.master_public_key_b64,this.production_public_key_b64);
+		//keys_set_properties will be duplicated in every generated file
+		this.keys_set_properties.address_definition = getArrDefinition(master_public_key_b64, production_public_key_b64);
+		this.keys_set_properties.id = Math.floor(Date.now() / 1000);
 
 		this.new_definition_chash = getChash160(this.keys_set_properties.address_definition);
 
 		if (!this.config.is_existing_address)
 			this.address = this.new_definition_chash;
 
-		
-
 	}
-
-
 
 }
 </script>

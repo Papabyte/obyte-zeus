@@ -78,8 +78,6 @@ export default {
 			window.URL.revokeObjectURL(this.url);
 		}
 		this.url = window.URL.createObjectURL(data);
-		// returns a URL you can use as a href
-
 	}
 }
 

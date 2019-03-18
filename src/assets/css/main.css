@@ -90,8 +90,8 @@ padding: 20px;
 }
 
 .address-input{
-
 	width: 300px;
-
-
+}
+.in-line{
+	display: inline-block;
 }

@@ -22,6 +22,7 @@
 
 const generatePassphrase = require('eff-diceware-passphrase')
 const aes256 = require('aes256');
+import { passphrase_length } from '../modules/conf.js'
 
 export default {
 	name: 'EncryptAndDownload',
@@ -67,7 +68,7 @@ export default {
 			this.state.is_downloaded = true;
 			const link = document.createElement('a')
 			link.href = this.url
-			link.setAttribute('download', this.name + '-'+ this.keys_set_properties.address+'.share') //or any other extension
+			link.setAttribute('download', this.name + '-'+ this.keys_set_properties.address+'-'+this.keys_set_properties.id+'.'+ this.type) //or any other extension
 			document.body.appendChild(link)
 			link.click()
 			this.onDownload();
@@ -75,9 +76,16 @@ export default {
 
 	},
 	created: function(){
-		this.passphrase = generatePassphrase(5).join(" ");
+		this.passphrase = generatePassphrase(passphrase_length).join(" ");
 		this.encrypted_data = aes256.encrypt(this.passphrase, this.data.toString('base64'));
-		this.jsonString = JSON.stringify(Object.assign({type: this.type, encryption:"AES256", encrypted_data: this.encrypted_data, owner_name: this.name}, this.keys_set_properties));
+		this.jsonString = JSON.stringify(Object.assign({
+			type: this.type, 
+			encryption:"AES256", 
+			encrypted_data: this.encrypted_data, 
+			owner_name: this.name,
+			passphrase_length: passphrase_length
+		}, this.keys_set_properties));
+
 		console.log(this.jsonString);
 
 			var data = new Blob([this.jsonString], {type: "application/json"});
@@ -87,7 +95,6 @@ export default {
 				window.URL.revokeObjectURL(this.url);
 			}
 			this.url = window.URL.createObjectURL(data);
-			// returns a URL you can use as a href
 
 	}
 }
@@ -106,7 +113,5 @@ export default {
 		padding-left:20px;
 		cursor: pointer;
 	}
-	.icon-download{
-		cursor: pointer;
-	}
+
 </style>

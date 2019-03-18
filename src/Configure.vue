@@ -73,7 +73,7 @@ export default {
 					this.$router.push({name:'loadmasterkey', params:{config:this.config}});
 				};
 
-				this.choice_3 = "Return previous choice";
+				this.choice_3 = "back";
 				this.onClick_3 = ()=>{this.newStep("initial")};
 			}
 
@@ -90,7 +90,7 @@ export default {
 					this.config.is_existing_address = true;
 					this.$router.push({name: 'createmasterkey', params:{config:this.config}});
 				};
-				this.choice_3 = "Return previous choice";
+				this.choice_3 = "back";
 				this.onClick_3 = ()=>{this.newStep("is_master_key_existing")};
 			}
 
