@@ -2,15 +2,20 @@
 	<div id="create-master-key" class="main-page">
 			<HeadPage/>
 
-		<div class="page-title">Create a new set of keys</div>
+		<div class="page-title">New set of keys creation</div>
 		<hr />
 		<div v-if="!is_secret_created">
 			<div v-if="!config.is_existing_address" id="input-address">
+					<div class="action-title">
+						Existing address
+					</div>
 					Enter the address of your existing oracle or address for which you want to create a set of keys:
 					<input type="text" v-model="address" placeholder="ex: GMHFBTV6D3R3TJ5EJAAUM55EXWNXCJIT" class="address-input">
 			</div>
-
 			<div v-if="!config.is_existing_address" id="shamir-config">
+				<div class="action-title">
+					Shared secret configuration
+				</div>
 				<div id="shares-config">
 					Require 
 					<select id="required_shares"
@@ -26,9 +31,13 @@
 					</select>
 					total shares
 				</div>
+
+				<div id="name-shares">
+					Full master key owner  <input type="text" v-model="full_master_key_owner_name" placeholder="ex: CEO" class="names-input">
+				</div>
 				<div id="name-shares">
 					<div v-for="index in total_shares_number">
-					Secret share owner {{index}}: <input type="text" v-model="names[index-1]" placeholder="ex: CFO" :id="'name-input-'+index" class="names-input">
+					Secret share owner {{index}}: <input type="text" v-model="names[index-1]" placeholder="ex: CFO" class="names-input">
 					</div>
 				</div>
 				</div>
@@ -37,7 +46,10 @@
 					</div>
 				</div>
 			<div v-if="is_secret_created">
-				<div class="key-title">
+						<div class="instructions">
+					Write down carefully each passphrase before downloading the file it encrypts. For security reason, don't transmit the file and the passphrase using the same medium. A good pratice is to save the file on an USB stick and to write the seed on paper. Then each secret owner should store file and passphrase in separate locations.
+				</div>
+				<div class="action-title">
 					Full master key
 				</div>
 				<div class="owner-width table-header">Owner</div>
@@ -48,8 +60,8 @@
 				<div class="icon-download-width table-header">
 					<span>Save</span>
 				</div>
-				<EncryptAndDownload type="master" name="boss" :state="states[0]" :onDownload="onDownload" :data="master_private_key" :keys_set_properties="keys_set_properties" />
-				<div class="key-title">
+				<EncryptAndDownload type="master" :name="full_master_key_owner_name" :state="states[0]" :onDownload="onDownload" :data="master_private_key" :keys_set_properties="keys_set_properties" />
+				<div class="action-title">
 					Master key shares
 				</div>
 				<div class="owner-width table-header"> Owner</div>
@@ -63,11 +75,34 @@
 
 				<div v-for="(item, index) in shamir_secret_shares">
 					<EncryptAndDownload type="share" :state="states[index+1]" :onDownload="onDownload" :name="names[index]" :data="shamir_secret_shares[index]" :keys_set_properties="keys_set_properties" />
+					<hr v-if="index!=(shamir_secret_shares.length-1)" class="download-separator" />
 				</div>
+
+				<div class="action-title">
+					Production key
+				</div>
+				<div class="owner-width table-header">Owner</div>
+
+				<div class="passphrase passphrase-width table-header">
+					Passphrase
+				</div>
+				<div class="icon-download-width table-header">
+					<span>Save</span>
+				</div>
+				<EncryptAndDownload type="master" name="IT team" :state="states[shamir_secret_shares.length+1]" :onDownload="onDownload" :data="production_private_key" :keys_set_properties="keys_set_properties" />
+				<div v-if="is_everything_saved && config.is_existing_address">
+					<CreateAndDownloadDefinitionChangeScript :onDownload="onScriptDownloaded" :address="address" :new_definition_chash="new_definition_chash" />
+				</div>
+				<div v-if="script_downloaded || !config.is_existing_address" class="status">
+					All steps completed.					
+				</div>
+
+				<div v-if="!is_everything_saved" class="status">
+					{{remaining_savings}} files to save.
+				</div>
+			
 			</div>
-			<div v-if="is_everything_saved">
-				Operation complete
-			</div>
+	
 	</div>
 </template>
 
@@ -75,6 +110,9 @@
 import HeadPage from './components/HeadPage.vue'
 import LargeButton from './components/LargeButton.vue'
 import EncryptAndDownload from './components/EncryptAndDownload.vue'
+import CreateAndDownloadDefinitionChangeScript from './components/CreateAndDownloadDefinitionChangeScript.vue'
+import { getArrDefinition } from './modules/conf.js'
+
 const crypto = require('crypto');
 const secp256k1 = require('secp256k1');
 const byteball = require('byteball');
@@ -86,7 +124,8 @@ export default {
 	components: {
 		HeadPage,
 		LargeButton,
-		EncryptAndDownload
+		EncryptAndDownload,
+		CreateAndDownloadDefinitionChangeScript
 	},
 	props:{
 		config:{
@@ -106,6 +145,7 @@ export default {
 			production_private_key_b64: null,
 			master_public_key_b64: null,
 			production_public_key_b64: null,
+			new_definition_chash: "",
 			required_shares: 1,
 			total_shares: 2,
 			total_shares_number : 2,
@@ -113,18 +153,25 @@ export default {
 			shamir_secret_shares: [],
 			keys_set_properties: {},
 			states:[],
-			json:""
-
+			full_master_key_owner_name:"",
+			json:"",
+			remaining_savings:0,
+			script_downloaded: false
 		}
 	},
 	methods:{
+		onScriptDownloaded: function(){
+			this.script_downloaded = true;
+		},
 		onDownload: function(){
 			this.json = JSON.stringify(this.states);
+			var count = 0;
 			for (var i = 0; i< this.states.length; i++){
 				if (!this.states[i].is_downloaded)
-					return this.is_everything_saved = false;
+					count++			
 			}
-			return this.is_everything_saved = true;
+			this.remaining_savings = count;
+			return this.is_everything_saved = count == 0;
 		},
 		onOk: function(){
 			this.keys_set_properties.required_shares = this.required_shares;
@@ -136,22 +183,26 @@ export default {
 		//check that all share owners have been named for the total number of shares configured
 		checkShamirConfig(){
 				for (var i = 0 ; i < this.total_shares; i++){
-					if (!this.names[i] || this.names[i].length < 2){
+					if (!this.names[i] || this.names[i].length < 2 ||this.full_master_key_owner_name.length <2 ){
 						return this.is_valid_shamir_config = false;
 					}
 				}
 				return this.is_valid_shamir_config = true;
 
 		},
+		initialize_states_array(length){
+			this.states = [];
+			for(var i = 0; i < length; i++){
+				this.states[i] = {is_downloaded:false};
+			}
+		},
 		createShamirSecretShares(){
 			const sss = require('shamirs-secret-sharing')
 			this.shamir_secret_shares = sss.split(this.master_private_key, { shares: this.total_shares_number, threshold: Number(this.required_shares) })
 			this.states = [];
-			for(var i = 0; i < this.shamir_secret_shares.length + 1; i++){
-					this.states[i] = {is_downloaded:false};
-			}
-						this.json = JSON.stringify(this.states);
-
+			this.initialize_states_array(this.shamir_secret_shares.length + 2);// number of shares + 1 master key + 1 production key
+			this.json = JSON.stringify(this.states);
+			this.onDownload();
 		}
 	},
 	watch:{
@@ -196,30 +247,14 @@ export default {
 		this.master_public_key_b64 = secp256k1.publicKeyCreate(this.master_private_key).toString('base64');
 		this.production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
 
-		this.keys_set_properties.address_definition = 
-		['or',
-			['and', 
-				[
-					"sig",
-					{
-						"pubkey": this.production_public_key_b64
-					}
-				],
-				[
-					"not", ["has definition change", ["this address", "any"]]
-				],
-			],
-			[
-				"sig",
-				{
-					"pubkey": this.master_public_key_b64
-				}
-			]
-		];
+		this.keys_set_properties.address_definition = getArrDefinition(this.master_public_key_b64,this.production_public_key_b64);
+
+		this.new_definition_chash = getChash160(this.keys_set_properties.address_definition);
 
 		if (!this.config.is_existing_address)
-			this.address = getChash160(this.keys_set_properties.address_definition);
+			this.address = this.new_definition_chash;
 
+		
 
 	}
 
@@ -232,12 +267,10 @@ export default {
 	@import './assets/css/main.css';
 
 	#input-address{
-		padding-top: 50px;
 		padding-left: 20px;
 	}
 
 	#shares-config{
-		padding-top: 30px;
 		padding-left: 20px;
 	}
 
@@ -246,12 +279,25 @@ export default {
 		padding-left: 20px;
 	}
 
-	.key-title{
+	.action-title{
 		padding-top: 50px;
 		padding-bottom: 30px;
 		text-align: center;
 		font-size: 20px;
 		font-weight: bold;
+		color: rgb(114, 5, 5);
+	}
+
+	.download-separator{
+		  border: 1px solid gray;
+	}
+
+	.instructions{
+		padding:20px;
+	}
+	.status{
+		padding-top: 40px;
+		text-align: center;
 		color: rgb(114, 5, 5);
 	}
 </style>

@@ -80,13 +80,13 @@ export default {
 			if (this.step == "new_master_key"){
 				this.choice_1 ="Create a set of keys for a new address";
 				this.onClick_1 = ()=>{
-					this.config.action = "new_set_of_keys";
+					this.config.action = "new_set_of_keys_new_address";
 					this.config.is_existing_address = false;
 					this.$router.push({name:'createmasterkey', params:{config:this.config}});
 				};
 				this.choice_2 ="Create a set of keys for an existing address";
 				this.onClick_2 = ()=>{
-					this.config.action = "new_set_of_keys";
+					this.config.action = "new_set_of_keys_existing_address";
 					this.config.is_existing_address = true;
 					this.$router.push({name: 'createmasterkey', params:{config:this.config}});
 				};
