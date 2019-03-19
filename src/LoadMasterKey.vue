@@ -2,7 +2,6 @@
   <div id="load-master-key" class="main-page">
 	  	<HeadPage/>
 			<div class="page-title in-line">Load master key</div>
-			<div class="next-action in-line">{{next_action}}</div>
 		<hr />
 			<div v-if="step=='initial'">
 				<div>
@@ -81,14 +80,44 @@ export default {
 		},
 		onMasterKeyDecrypted: function(decrypted_data){
 			this.master_key_b64 = decrypted_data;
+			this.goNext();
 		},
 		combineSecrets: function(){
 			const sss = require('secrets.js-grempe');
 			this.master_key_b64 = Buffer.from(sss.combine(this.arrSecretShares),'hex').toString('base64');
-
+			this.goNext();
 		},
-		goNextAction: function(){
+		goNext: function(){
+//new_set_of_keys_existing_address
+//new_set_of_keys_new_address
+//renew_set_of_keys
+//renew_production_key
 
+			if (this.config.action == "renew_set_of_keys"){
+				this.$router.push({
+					name:'createmasterkey', 
+					params:{
+						config:this.config,
+						previous_master_key_b64: this.master_key_b64
+					}
+				});
+			}
+			if (this.config.action == "renew_production_key"){
+				this.$router.push({
+					name:'download_prod_key_and_change_definition', 
+					params:{
+						config:this.config,
+						previous_master_key_b64: this.master_key_b64
+/*
+			config:this.config,
+					address: this.config.address,
+					keys_set_properties: this.keys_set_properties,
+					master_private_key: this.previous_master_key_b64,
+					new_definition_chash: this.new_definition_chash
+*/
+					}
+				});
+			}
 
 		}
 
@@ -97,15 +126,6 @@ export default {
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
 
-		switch (this.config.action){
-			case "renew_set_of_keys":{
-				this.next_action = " - then renew master and production keys";
-			}
-			case "renew_production_key":{
-				this.next_action = " - then renew production key";
-			}
-			
-		}
 			
 	}
 }

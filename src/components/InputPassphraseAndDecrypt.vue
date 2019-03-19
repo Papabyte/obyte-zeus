@@ -53,6 +53,7 @@ export default {
 		}
 	},
 	methods: {
+		//decrypt then emit event for parent component
 		decrypt: function(){
 			var decrypted_data = aes256.decrypt(this.arrWords.join(" "), this.objFromFile.encrypted_data);
 			this.$emit("decrypted", decrypted_data);
@@ -60,6 +61,7 @@ export default {
 
 	},
 	created: function(){
+		//we create arrays for words and their status
 		for (var i = 0; i < this.objFromFile.passphrase_length; i++){
 			this.arrStatuses[i]=false;
 			this.arrWords[i]="";

@@ -21,13 +21,13 @@
 					<select id="required_shares"
 							class="form-control"
 							v-model="required_shares">
-						<option v-for="index in 8" >{{index}}</option>
+						<option v-for="index in 8" >{{index+1}}</option>
 					</select>	
-					share{{required_shares > 1 ? "s" : ""}} of 
+					shares of 
 					<select id="total_shares"
 							class="form-control"
 							v-model="total_shares">
-						<option v-for="index in 7" >{{index+1}}</option>
+						<option v-for="index in 8" >{{index+1}}</option>
 					</select>
 					total shares
 				</div>
@@ -46,7 +46,7 @@
 					</div>
 				</div>
 			<div v-if="is_secret_created">
-						<div class="instructions">
+				<div class="instructions">
 					Write down carefully each passphrase before downloading the file it encrypts. For security reason, don't transmit the file and the passphrase using the same medium. A good pratice is to save the file on an USB stick and to write the seed on paper. Then each secret owner should store file and passphrase in separate locations.
 				</div>
 				<div class="action-title">
@@ -78,28 +78,15 @@
 					<hr v-if="index!=(shamir_secret_shares.length-1)" class="download-separator" />
 				</div>
 
-				<div class="action-title">
-					Production key
-				</div>
-				<div class="owner-width table-header">Owner</div>
 
-				<div class="passphrase passphrase-width table-header">
-					Passphrase
-				</div>
-				<div class="icon-download-width table-header">
-					<span>Save</span>
-				</div>
-				<EncryptAndDownload type="prod" name="IT team" :state="states[shamir_secret_shares.length+1]" :onDownload="onDownload" :data="production_private_key.toString('base64')" :keys_set_properties="keys_set_properties" />
-				<div v-if="is_everything_saved && config.is_existing_address">
-					<CreateAndDownloadDefinitionChangeScript :id="id" :onDownload="onScriptDownloaded" :address="address" :new_definition_chash="new_definition_chash" />
-				</div>
-				<div v-if="is_everything_saved && (is_script_downloaded || !config.is_existing_address)" class="status">
-					All steps completed.					
+				<div v-if="are_full_key_and_shares_saved && config.is_existing_address">
+					<CreateAndDownloadDefinitionChangeScript :id="id" :onDownload="downloadProdKey" :address="address" :new_definition_chash="new_definition_chash" :keys_set_properties="keys_set_properties" />
 				</div>
 
-				<div v-if="!is_everything_saved" class="status">
-					{{remaining_savings}} files left to save.
+				<div v-if="!are_full_key_and_shares_saved" class="status">
+						{{remaining_savings}} files left to save.
 				</div>
+	
 			
 			</div>
 	
@@ -111,7 +98,9 @@ import HeadPage from './components/HeadPage.vue'
 import LargeButton from './components/LargeButton.vue'
 import EncryptAndDownload from './components/EncryptAndDownload.vue'
 import CreateAndDownloadDefinitionChangeScript from './components/CreateAndDownloadDefinitionChangeScript.vue'
-import { getArrDefinition } from './modules/conf.js'
+
+
+import { getArrDefinition, version } from './modules/conf.js'
 
 const crypto = require('crypto');
 const secp256k1 = require('secp256k1');
@@ -125,24 +114,27 @@ export default {
 		HeadPage,
 		LargeButton,
 		EncryptAndDownload,
-		CreateAndDownloadDefinitionChangeScript
+		CreateAndDownloadDefinitionChangeScript,
 	},
 	props:{
 		config:{
 			type: Object
-		}
+		},
+		previous_master_key_b64: {
+			type: String
+		},
 	},
 	data:function(){
 		return {
 			is_secret_created: false,
 			is_valid_address: false,
-			is_everything_saved: false,
+			are_full_key_and_shares_saved: false,
 			address: null,
 			is_valid_shamir_config: false,
 			master_private_key: null,
 			production_private_key: null,
 			new_definition_chash: "",
-			required_shares: 1,
+			required_shares: 2,
 			total_shares: 2,
 			total_shares_number : 2,
 			names:[],
@@ -151,23 +143,39 @@ export default {
 			states:[],
 			full_master_key_owner_name:"",
 			remaining_savings: 0,
-			is_script_downloaded: false
 		}
 	},
 	methods:{
-		onScriptDownloaded: function(){
-			this.is_script_downloaded = true;
+		downloadProdKey: function(){
+
+			this.$router.push({
+				name:'download_prod_key_and_change_definition', 
+				params:{
+					config:this.config,
+					address: this.address,
+					production_private_key: this.production_private_key,
+					keys_set_properties: this.keys_set_properties,
+					master_private_key: this.previous_master_key_b64,
+					new_definition_chash: this.new_definition_chash
+				}
+			});
+
+
 		},
-		//each time a file is downloaded we refresh download countdown and set is_everything_saved=true when finished
+		//each time a file is downloaded we refresh download countdown and set are_full_key_and_shares_saved=true when finished
 		onDownload: function(){
-			this.json = JSON.stringify(this.states);
 			var count = 0;
 			for (var i = 0; i< this.states.length; i++){
 				if (!this.states[i].is_downloaded)
 					count++			
 			}
 			this.remaining_savings = count;
-			return this.is_everything_saved = count == 0;
+
+			if (count == 0){
+				this.are_full_key_and_shares_saved = true;
+				if (!this.is_existing_address)
+					this.downloadProdKey();
+			}
 		},
 		onOk: function(){
 			this.keys_set_properties.required_shares = this.required_shares;
@@ -197,7 +205,7 @@ export default {
 			const sss = require('secrets.js-grempe');
 			this.shamir_secret_shares = sss.share(this.master_private_key.toString('hex'), this.total_shares_number,Number(this.required_shares));
 			var secret = sss.combine(this.shamir_secret_shares.slice(0,2));
-			this.initialize_states_array(this.shamir_secret_shares.length + 2);// number of shares + 1 master key + 1 production key
+			this.initialize_states_array(this.shamir_secret_shares.length + 1);// number of shares + 1 master key
 			this.onDownload();
 		}
 	},
@@ -240,14 +248,17 @@ export default {
 		//creation of production and master public keys
 		var master_public_key_b64 = secp256k1.publicKeyCreate(this.master_private_key).toString('base64');
 		var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
-		//keys_set_properties will be duplicated in every generated file
-		this.keys_set_properties.address_definition = getArrDefinition(master_public_key_b64, production_public_key_b64);
-		this.keys_set_properties.id = Math.floor(Date.now() / 1000);
 
-		this.new_definition_chash = getChash160(this.keys_set_properties.address_definition);
-
-		if (!this.config.is_existing_address)
+		this.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
+		if (!this.config.is_existing_address){
 			this.address = this.new_definition_chash;
+			this.keys_set_properties.first_definition = getArrDefinition(master_public_key_b64, production_public_key_b64);
+		}
+		
+		//keys_set_properties will be duplicated in every generated file
+		this.keys_set_properties.id = Math.floor(Date.now() / 1000);
+		this.keys_set_properties.address = this.address;
+		this.version = version;
 
 	}
 

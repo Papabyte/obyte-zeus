@@ -23,3 +23,4 @@ exports.getArrDefinition = function(master_key_b64, production_key_b64){
 };
 
 exports.passphrase_length = 5;
+exports.version = 1;

@@ -86,8 +86,6 @@ export default {
 			passphrase_length: passphrase_length
 		}, this.keys_set_properties));
 
-		console.log(this.data);
-
 			var data = new Blob([this.jsonString], {type: "application/json"});
 			// If we are replacing a previously generated file we need to
 			// manually revoke the object URL to avoid memory leaks.

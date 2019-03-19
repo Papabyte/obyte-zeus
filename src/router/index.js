@@ -24,6 +24,12 @@ export default new Router({
 			path: '/createmasterkey',
 			component: lazyLoading('CreateMasterKey'),
 			props: true
+		},
+		{
+			name: 'download_prod_key_and_change_definition',
+			path: '/download_prod_key_and_change_definition',
+			component: lazyLoading('DownloadProdKeyAndChangeDefinition'),
+			props: true
 		}
 
 	],

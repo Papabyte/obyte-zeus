@@ -32,7 +32,6 @@ export default {
 	},
 	methods: {
 		download: function(){
-
 			const link = document.createElement('a')
 			link.href = this.url;
 			link.setAttribute('download','definition_change.js') //or any other extension
@@ -43,7 +42,8 @@ export default {
 
 	},
 	created: function(){
-
+		//script similar to https://github.com/byteball/headless-obyte/blob/master/play/create_definition_change.js
+		//to be executed to change definition of an already existing address
 		var definition_change_script = `
 		"use strict";
 		var headlessWallet = require('../start.js');
@@ -86,4 +86,12 @@ export default {
 
 <style lang='scss' scoped>
 	@import '../assets/css/main.css';
+	.download-definition-change{
+		padding-top:80px;
+		padding-bottom:20px;
+
+	}
+	.icon-download{
+		padding-left:10px;
+	}
 </style>
