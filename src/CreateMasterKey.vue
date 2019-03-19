@@ -60,7 +60,7 @@
 				<div class="icon-download-width table-header">
 					<span>Save</span>
 				</div>
-				<EncryptAndDownload type="master" :name="full_master_key_owner_name" :state="states[0]" :onDownload="onDownload" :data="master_private_key" :keys_set_properties="keys_set_properties" />
+				<EncryptAndDownload type="master" :name="full_master_key_owner_name" :state="states[0]" :onDownload="onDownload" :data="master_private_key.toString('base64')" :keys_set_properties="keys_set_properties" />
 				<div class="action-title">
 					Master key shares
 				</div>
@@ -89,7 +89,7 @@
 				<div class="icon-download-width table-header">
 					<span>Save</span>
 				</div>
-				<EncryptAndDownload type="prod" name="IT team" :state="states[shamir_secret_shares.length+1]" :onDownload="onDownload" :data="production_private_key" :keys_set_properties="keys_set_properties" />
+				<EncryptAndDownload type="prod" name="IT team" :state="states[shamir_secret_shares.length+1]" :onDownload="onDownload" :data="production_private_key.toString('base64')" :keys_set_properties="keys_set_properties" />
 				<div v-if="is_everything_saved && config.is_existing_address">
 					<CreateAndDownloadDefinitionChangeScript :id="id" :onDownload="onScriptDownloaded" :address="address" :new_definition_chash="new_definition_chash" />
 				</div>
@@ -194,8 +194,9 @@ export default {
 			}
 		},
 		createShamirSecretShares(){
-			const sss = require('shamirs-secret-sharing')
-			this.shamir_secret_shares = sss.split(this.master_private_key, { shares: this.total_shares_number, threshold: Number(this.required_shares) })
+			const sss = require('secrets.js-grempe');
+			this.shamir_secret_shares = sss.share(this.master_private_key.toString('hex'), this.total_shares_number,Number(this.required_shares));
+			var secret = sss.combine(this.shamir_secret_shares.slice(0,2));
 			this.initialize_states_array(this.shamir_secret_shares.length + 2);// number of shares + 1 master key + 1 production key
 			this.onDownload();
 		}
@@ -239,7 +240,6 @@ export default {
 		//creation of production and master public keys
 		var master_public_key_b64 = secp256k1.publicKeyCreate(this.master_private_key).toString('base64');
 		var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
-
 		//keys_set_properties will be duplicated in every generated file
 		this.keys_set_properties.address_definition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 		this.keys_set_properties.id = Math.floor(Date.now() / 1000);

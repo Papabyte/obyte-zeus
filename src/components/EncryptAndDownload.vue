@@ -36,7 +36,7 @@ export default {
 			required: true
 		},
 		data: {
-			type: Buffer,
+			type: String,
 			required: true
 		},
 		name: {
@@ -77,7 +77,7 @@ export default {
 	},
 	created: function(){
 		this.passphrase = generatePassphrase(passphrase_length).join(" ");
-		this.encrypted_data = aes256.encrypt(this.passphrase, this.data.toString('base64'));
+		this.encrypted_data = aes256.encrypt(this.passphrase, this.data);
 		this.jsonString = JSON.stringify(Object.assign({
 			type: this.type, 
 			encryption:"AES256", 
@@ -86,7 +86,7 @@ export default {
 			passphrase_length: passphrase_length
 		}, this.keys_set_properties));
 
-		console.log(this.jsonString);
+		console.log(this.data);
 
 			var data = new Blob([this.jsonString], {type: "application/json"});
 			// If we are replacing a previously generated file we need to
