@@ -91,7 +91,32 @@ padding: 20px;
 
 .address-input{
 	width: 300px;
+	margin-left:20px;
 }
 .in-line{
 	display: inline-block;
+}
+
+.error{
+	color:red
+}
+.error-action{
+	color:red;
+	 text-decoration: underline;
+}
+.error-action:hover{
+	cursor: pointer;
+}
+
+.align-center{
+	text-align:center;
+}
+
+.action-title{
+	padding-top: 50px;
+	padding-bottom: 30px;
+	text-align: center;
+	font-size: 20px;
+	font-weight: bold;
+	color: rgb(114, 5, 5);
 }

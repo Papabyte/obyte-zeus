@@ -50,32 +50,24 @@ export default {
 			this.step = step;
 
 			if (this.step == "initial"){
-				this.choice_1 ="Generate or renew a master key";
-				this.onClick_1 = ()=>{this.newStep("is_master_key_existing")};
-
-				this.choice_2 = "Renew a production key";
-				this.onClick_2 = ()=>{
-					this.config.action = "renew_production_key";
-					this.$router.push({name:'loadmasterkey', params:{config:this.config}});
-				};
-
-				this.choice_3 = null;
-				this.onClick_3 = null;
-			}
-
-			if (this.step == "is_master_key_existing"){
-				this.choice_1 ="Create a new set of keys";
+				this.choice_1 ="Create new master and production keys";
 				this.onClick_1 = ()=>{this.newStep("new_master_key")};
 
-				this.choice_2 ="Renew an existing set of keys";
+				this.choice_2 ="Renew master and production keys";
 				this.onClick_2 = ()=>{
 					this.config.action = "renew_set_of_keys";
 					this.$router.push({name:'loadmasterkey', params:{config:this.config}});
 				};
 
-				this.choice_3 = "back";
-				this.onClick_3 = ()=>{this.newStep("initial")};
+				this.choice_3 = "Renew production key";
+				this.onClick_3 = ()=>{
+					this.config.action = "renew_production_key";
+					this.$router.push({name:'loadmasterkey', params:{config:this.config}});
+				};
+
+		
 			}
+
 
 			if (this.step == "new_master_key"){
 				this.choice_1 ="Create a set of keys for a new address";
@@ -91,7 +83,7 @@ export default {
 					this.$router.push({name: 'createmasterkey', params:{config:this.config}});
 				};
 				this.choice_3 = "back";
-				this.onClick_3 = ()=>{this.newStep("is_master_key_existing")};
+				this.onClick_3 = ()=>{this.newStep("initial")};
 			}
 
 		}

@@ -68,7 +68,7 @@ export default {
 			this.state.is_downloaded = true;
 			const link = document.createElement('a')
 			link.href = this.url
-			link.setAttribute('download', this.name + '-'+ this.keys_set_properties.address+'-'+this.keys_set_properties.id+'.'+ this.type) //or any other extension
+			link.setAttribute('download', this.name + '-'+ this.keys_set_properties.address+'-'+this.keys_set_properties.id+ (this.type == 'prod' ? '-' + new Date().toISOString().slice(0,10) : '') +'.'+ this.type) //or any other extension
 			document.body.appendChild(link)
 			link.click()
 			this.onDownload();
@@ -78,13 +78,14 @@ export default {
 	created: function(){
 		this.passphrase = generatePassphrase(passphrase_length).join(" ");
 		this.encrypted_data = aes256.encrypt(this.passphrase, this.data);
-		this.jsonString = JSON.stringify(Object.assign({
+		this.jsonString = JSON.stringify({
 			type: this.type, 
 			encryption:"AES256", 
 			encrypted_data: this.encrypted_data, 
 			owner_name: this.name,
-			passphrase_length: passphrase_length
-		}, this.keys_set_properties));
+			passphrase_length: passphrase_length,
+			keys_set_properties: this.keys_set_properties
+		});
 
 			var data = new Blob([this.jsonString], {type: "application/json"});
 			// If we are replacing a previously generated file we need to

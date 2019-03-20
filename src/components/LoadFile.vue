@@ -34,14 +34,5 @@ export default {
 
 <style lang='scss' scoped>
 	@import '../assets/css/main.css';
-	.error{
-		color:red
-	}
-	.ok{
-		color:red;
- 		text-decoration: underline;
-	}
-	.ok:hover{
-		cursor: pointer;
-	}
+
 </style>

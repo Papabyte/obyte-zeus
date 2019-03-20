@@ -2,15 +2,17 @@
 	<div id="create-master-key" class="main-page">
 		<HeadPage/>
 
-		<div class="page-title">New set of keys creation {{is_secret_created ? " for " + address : ""}}</div>
+		<div class="page-title">New set of keys creation {{step != 'initial' ? " for " + address : ""}}</div>
 		<hr />
-		<div v-if="!is_secret_created">
+		<div v-if="step=='initial'">
 			<div v-if="config.is_existing_address" id="input-address">
 					<div class="action-title">
 						Existing address
 					</div>
-					Enter the address of your existing oracle or address for which you want to create a set of keys:
-					<input type="text" v-model="address" placeholder="ex: GMHFBTV6D3R3TJ5EJAAUM55EXWNXCJIT" class="address-input">
+					<div class="instructions">
+					Enter the address of your existing oracle or witness for which you want to create a set of keys:
+					</div>
+						<input type="text" v-model="address" placeholder="ex: GMHFBTV6D3R3TJ5EJAAUM55EXWNXCJIT" class="address-input">
 			</div>
 			<div v-if="is_valid_address" id="shamir-config">
 				<div class="action-title">
@@ -42,10 +44,10 @@
 				</div>
 				</div>
 					<div>
-						<LargeButton v-if="is_valid_address&&is_valid_shamir_config" label= "OK" :onClick="onOk" />
+						<LargeButton v-if="is_valid_address&&is_valid_shamir_config" label= "OK" :onClick="onOk" class="button-ok"/>
 					</div>
 				</div>
-			<div v-if="is_secret_created">
+			<div v-if="step=='secret_created'||step=='propose_prod_key_download'||step=='download_script'">
 				<div class="instructions">
 					Write down carefully each passphrase before downloading the file it encrypts. For security reason, don't transmit the file and the passphrase using the same medium. A good pratice is to save the file on an USB stick and to write the seed on paper. Then each secret owner should store file and passphrase in separate locations.
 				</div>
@@ -78,18 +80,17 @@
 					<hr v-if="index!=(shamir_secret_shares.length-1)" class="download-separator" />
 				</div>
 
-
-				<div v-if="are_full_key_and_shares_saved && config.is_existing_address">
-					<CreateAndDownloadDefinitionChangeScript :id="id" :onDownload="downloadProdKey" :address="address" :new_definition_chash="new_definition_chash" :keys_set_properties="keys_set_properties" />
-				</div>
-
 				<div v-if="!are_full_key_and_shares_saved" class="status">
 						{{remaining_savings}} files left to save.
 				</div>
-	
-			
 			</div>
-	
+			<div v-if="step=='download_script'">
+				<CreateAndDownloadDefinitionChangeScript :onDownload="setPropKeyDownloadStep" :address="address" :new_definition_chash="new_definition_chash" :keys_set_properties="keys_set_properties" />
+			</div>
+
+			<div v-if="step=='propose_prod_key_download'">
+				<LargeButton label="save prod key" :onClick="downloadProdKey" class="button-ok"/>
+			</div>
 	</div>
 </template>
 
@@ -126,7 +127,6 @@ export default {
 	},
 	data:function(){
 		return {
-			is_secret_created: false,
 			is_valid_address: false,
 			are_full_key_and_shares_saved: false,
 			address: null,
@@ -143,9 +143,13 @@ export default {
 			states:[],
 			full_master_key_owner_name:"",
 			remaining_savings: 0,
+			step:"initial"
 		}
 	},
 	methods:{
+		setPropKeyDownloadStep:function(){
+			this.step='propose_prod_key_download';
+		},
 		downloadProdKey: function(){
 
 			this.$router.push({
@@ -155,7 +159,7 @@ export default {
 					address: this.address,
 					production_private_key: this.production_private_key,
 					keys_set_properties: this.keys_set_properties,
-					master_private_key: this.previous_master_key_b64,
+					master_private_key_b64: this.previous_master_key_b64,
 					new_definition_chash: this.new_definition_chash
 				}
 			});
@@ -173,8 +177,10 @@ export default {
 
 			if (count == 0){
 				this.are_full_key_and_shares_saved = true;
-				if (!this.is_existing_address)
-					this.downloadProdKey();
+				if (this.config.is_existing_address)
+					this.step='download_script';
+				else
+					this.step='propose_prod_key_download';
 			}
 		},
 		onOk: function(){
@@ -182,7 +188,7 @@ export default {
 			this.keys_set_properties.total_shares = this.total_shares_number;
 			this.keys_set_properties.address = this.address;
 			this.createShamirSecretShares();
-			this.is_secret_created = true;
+			this.step = "secret_created";
 		},
 		//check that all share owners have been named for the total number of shares configured
 		checkShamirConfig(){
@@ -281,14 +287,6 @@ export default {
 		padding-left: 20px;
 	}
 
-	.action-title{
-		padding-top: 50px;
-		padding-bottom: 30px;
-		text-align: center;
-		font-size: 20px;
-		font-weight: bold;
-		color: rgb(114, 5, 5);
-	}
 
 	.download-separator{
 		  border: 1px solid gray;
@@ -301,5 +299,9 @@ export default {
 		padding-top: 40px;
 		text-align: center;
 		color: rgb(114, 5, 5);
+	}
+	.button-ok{
+		margin-top:50px;
+
 	}
 </style>

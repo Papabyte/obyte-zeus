@@ -4,13 +4,20 @@
 			<div class="page-title in-line">Load master key</div>
 		<hr />
 			<div v-if="step=='initial'">
-				<div>
+				<div class="instructions">
 					Open the full master key file or one secret share file
 				</div>
+				<div class="load-file-wrapper">
 				<LoadFile @load="onInitialLoad($event)"/>
+				</div>
+
 			</div>
 			<div v-if="step=='load_from_full_master_key'">
-				Enter the passphrase corrsponding to the full master key:
+								<div class="instructions">
+
+				Enter the passphrase corresponding to the full master key:
+								</div>
+
 				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onMasterKeyDecrypted($event)"/>
 			</div>
 			<div v-if="step=='load_from_full_shares'">
@@ -34,6 +41,7 @@ import LargeButton from './components/LargeButton.vue'
 import LoadFile from './components/LoadFile.vue'
 import InputPassphraseAndDecrypt from './components/InputPassphraseAndDecrypt.vue'
 import LoadFileAndDecrypt from './components/LoadFileAndDecrypt.vue'
+
 
 export default {
 	name: 'loadmasterkey',
@@ -74,7 +82,7 @@ export default {
 		onShareDecrypted: function(decrypted_data){
 			this.arrSecretShares.push(decrypted_data);
 			console.log(decrypted_data);
-			if (Number(this.objFromFirstFile.required_shares) === this.arrSecretShares.length)
+			if (Number(this.objFromFirstFile.keys_set_properties.required_shares) === this.arrSecretShares.length)
 				this.combineSecrets()
 
 		},
@@ -102,19 +110,14 @@ export default {
 					}
 				});
 			}
+
 			if (this.config.action == "renew_production_key"){
 				this.$router.push({
 					name:'download_prod_key_and_change_definition', 
 					params:{
 						config:this.config,
-						previous_master_key_b64: this.master_key_b64
-/*
-			config:this.config,
-					address: this.config.address,
-					keys_set_properties: this.keys_set_properties,
-					master_private_key: this.previous_master_key_b64,
-					new_definition_chash: this.new_definition_chash
-*/
+						keys_set_properties: this.objFromFirstFile.keys_set_properties,
+						master_private_key_b64: this.master_key_b64,
 					}
 				});
 			}
@@ -135,8 +138,16 @@ export default {
 	@import './assets/css/main.css';
 
 	.next-action{
-
 		padding-left: 5px;
 		font-style:italic;
+	}
+
+	.instructions{
+		padding: 20px;
+	}
+
+	.load-file-wrapper{
+		padding-left: 20px;
+
 	}
 </style>
