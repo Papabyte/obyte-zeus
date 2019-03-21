@@ -107,7 +107,7 @@ const crypto = require('crypto');
 const secp256k1 = require('secp256k1');
 const byteball = require('byteball');
 
-const { getChash160 } = require('byteball/lib/utils');
+const { getChash160, prod_key_signing_path, master_key_signing_path } = require('byteball/lib/utils');
 
 export default {
 	name: 'createmasterkey',
@@ -264,6 +264,11 @@ export default {
 		//keys_set_properties will be duplicated in every generated file
 		this.keys_set_properties.id = Math.floor(Date.now() / 1000);
 		this.keys_set_properties.address = this.address;
+		this.keys_set_properties.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
+		this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
+
+		this.keys_set_properties.prod_key_signing_path = prod_key_signing_path;
+		this.keys_set_properties.master_key_signing_path = master_key_signing_path;
 		this.version = version;
 
 	}

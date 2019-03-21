@@ -46,7 +46,7 @@ export default {
 		//to be executed to change definition of an already existing address
 		var definition_change_script = `
 		"use strict";
-		var headlessWallet = require('../start.js');
+		var headlessWallet = require('./start.js');
 		var eventBus = require('ocore/event_bus.js');
 		var objectHash = require('ocore/object_hash.js');
 

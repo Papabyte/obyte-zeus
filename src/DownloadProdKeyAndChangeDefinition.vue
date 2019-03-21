@@ -119,7 +119,7 @@ export default {
 			const wif = toWif(Buffer.from(this.master_private_key_b64, 'base64'));
 
 			const params =   {
-				definition_chash: this.new_definition_chash,
+				definition_chash: this.keys_set_properties.new_definition_chash,
 				address: this.keys_set_properties.address,
 			}
 
@@ -152,8 +152,8 @@ export default {
 			//creation of production and master public keys
 			var master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.master_private_key_b64, 'base64')).toString('base64');
 			var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
-			this.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
-			this.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
+			this.keys_set_properties.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
+			this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 		}
 
 	}
