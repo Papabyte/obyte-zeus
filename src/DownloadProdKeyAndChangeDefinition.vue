@@ -35,7 +35,7 @@
 <script>
 import EncryptAndDownload from './components/EncryptAndDownload.vue'
 import HeadPage from './components/HeadPage.vue'
-import { getArrDefinition, version } from './modules/conf.js'
+import { getArrDefinition, version, master_key_signing_path, hub_testnet, hub } from './modules/conf.js'
 import LargeButton from './components/LargeButton.vue'
 
 const crypto = require('crypto');
@@ -43,7 +43,6 @@ const secp256k1 = require('secp256k1');
 const { toWif, getChash160 } = require('byteball/lib/utils');
 const obyte_js = require('byteball');
 
-const hub_address = 'wss://obyte.org/bb-test';
 
 export default {
 	name: 'download_prod_key_and_change_definition',
@@ -98,7 +97,11 @@ export default {
 			}
 		},
 		checkSolvency: function(){
-			const client = new obyte_js.Client(hub_address);
+			console.log("checkSolvency");
+			console.log(hub_testnet);
+						console.log(hub);
+
+			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (this.config.is_testnet ? true :false) });
 			const addresses = [this.keys_set_properties.address];
 
 			client.api.getBalances(addresses, (err, result)=> {
@@ -113,23 +116,24 @@ export default {
 
 		},
 		broadcast: function(){
-			const client = new obyte_js.Client(hub_address);
+			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (this.config.is_testnet ? true :false) });
 			const addresses = [this.keys_set_properties.address];
 
-			const wif = toWif(Buffer.from(this.master_private_key_b64, 'base64'));
+			const wif = toWif(Buffer.from(this.master_private_key_b64, 'base64'), true);
 
 			const params =   {
-				definition_chash: this.keys_set_properties.new_definition_chash,
-				address: this.keys_set_properties.address,
+				definition_chash: this.keys_set_properties.new_definition_chash
 			}
 
 			const conf = {
 				wif: wif,
 				address: this.keys_set_properties.address,
-				path:"r.0"
+				path: master_key_signing_path,
+				definition: this.keys_set_properties.arrDefinition,
+				testnet: true
 			};
 
-			client.post.addressDefinitionChange(params, wif, (err, result)=> {
+			client.post.addressDefinitionChange(params, conf, (err, result)=> {
 				this.error = err;
 				this.result = result;
 			});
@@ -141,7 +145,7 @@ export default {
 
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
-
+console.log(this.config);
 		//if no production key specified we create a new one
 		if (!this.production_private_key){
 			console.log("create production_private_key");

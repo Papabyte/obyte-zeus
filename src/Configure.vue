@@ -19,6 +19,8 @@
 	<LargeButton v-if="choice_1" :label= "choice_1" :onClick="onClick_1"/>
 	<LargeButton v-if="choice_2" :label= "choice_2" :onClick="onClick_2"/>
 	<LargeButton v-if="choice_3" :label= "choice_3" :onClick="onClick_3"/>
+	<div>Check box if for testnet:<input type="checkbox" id="checkbox" v-model="is_testnet">
+	</div>
 	</div>
 
 </template>
@@ -33,6 +35,11 @@ export default {
 		HeadPage,
 		LargeButton
 	},
+	watch:{
+		is_testnet: function (value){
+			this.config.is_testnet = value;
+		}
+	},
 	data:function(){
 		return {
 			step: null,
@@ -42,7 +49,8 @@ export default {
 			onClick_1: null,
 			onClick_2: null,
 			onClick_3: null,
-			config: {}
+			config: {},
+			is_testnet: false
 		}
 	},
 	methods:{
@@ -67,7 +75,6 @@ export default {
 
 		
 			}
-
 
 			if (this.step == "new_master_key"){
 				this.choice_1 ="Create a set of keys for a new address";
