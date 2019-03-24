@@ -1,6 +1,6 @@
 <template>
 	<div class="input-passphrase">
-		<div v-for="index in objFromFile.passphrase_length" class="in-line">
+		<div v-for="index in objFromFile.passphrase_length" class="in-line" :key="index">
 			<input type="text" v-model="arrWords[index-1]" placeholder="ex: acid" class="word in-line" :disabled="is_passphrase_complete">
 			<div class="icon-valid-wrapper in-line">
 			<img v-show="arrStatuses[index-1]" src="icon-valid.svg" height="20px">
@@ -35,7 +35,7 @@ export default {
 	},
 	watch:{
 		//total shares cannot be inferior to required shares
-		arrWords: function (value) {	
+		arrWords: function () {	
 			var count = 0;
 			for (var i = 0; i < this.arrWords.length; i++){
 				this.arrWords[i] = this.arrWords[i].trim();
@@ -48,7 +48,7 @@ export default {
 			}
 			if (this.arrWords.length === count){
 				this.decrypt();
-			 	this.is_passphrase_complete = true;
+				this.is_passphrase_complete = true;
 			}
 		}
 	},

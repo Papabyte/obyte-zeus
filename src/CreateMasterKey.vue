@@ -23,13 +23,13 @@
 					<select id="required_shares"
 							class="form-control"
 							v-model="required_shares">
-						<option v-for="index in 8" >{{index+1}}</option>
+						<option v-for="index in 8" :key="'required_shares_'+ index">{{index+1}}</option>
 					</select>	
 					shares of 
 					<select id="total_shares"
 							class="form-control"
 							v-model="total_shares">
-						<option v-for="index in 8" >{{index+1}}</option>
+						<option v-for="index in 8" :key="'total_shares_'+ index">{{index+1}}</option>
 					</select>
 					total shares
 				</div>
@@ -38,7 +38,7 @@
 					Full master key owner  <input type="text" v-model="full_master_key_owner_name" placeholder="ex: CEO" class="names-input">
 				</div>
 				<div id="name-shares">
-					<div v-for="index in total_shares_number">
+					<div v-for="index in total_shares_number" :key="'total_shares_number_'+ index">
 					Secret share owner {{index}}: <input type="text" v-model="names[index-1]" placeholder="ex: CFO" class="names-input">
 					</div>
 				</div>
@@ -75,7 +75,7 @@
 					<span>Save</span>
 				</div>
 
-				<div v-for="(item, index) in shamir_secret_shares">
+				<div v-for="(item, index) in shamir_secret_shares" :key="'shamir_secret_shares_'+ index">
 					<EncryptAndDownload  type="share" :state="states[index+1]" :onDownload="onDownload" :name="names[index]" :data="shamir_secret_shares[index]" :keys_set_properties="keys_set_properties" />
 					<hr v-if="index!=(shamir_secret_shares.length-1)" class="download-separator" />
 				</div>
@@ -105,7 +105,6 @@ import { getArrDefinition, version } from './modules/conf.js'
 
 const crypto = require('crypto');
 const secp256k1 = require('secp256k1');
-const byteball = require('byteball');
 
 const { getChash160, prod_key_signing_path, master_key_signing_path } = require('byteball/lib/utils');
 
@@ -210,7 +209,6 @@ export default {
 		createShamirSecretShares(){
 			const sss = require('secrets.js-grempe');
 			this.shamir_secret_shares = sss.share(this.master_private_key.toString('hex'), this.total_shares_number,Number(this.required_shares));
-			var secret = sss.combine(this.shamir_secret_shares.slice(0,2));
 			this.initialize_states_array(this.shamir_secret_shares.length + 1);// number of shares + 1 master key
 			this.onDownload();
 		}
@@ -233,7 +231,7 @@ export default {
 		address: function(value){
 			this.is_valid_address = value.length == 32;
 		},
-		names: function(value){
+		names: function(){
 			this.checkShamirConfig();
 		}
 	},
@@ -294,7 +292,7 @@ export default {
 
 
 	.download-separator{
-		  border: 1px solid gray;
+		border: 1px solid gray;
 	}
 
 	.instructions{

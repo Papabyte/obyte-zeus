@@ -35,7 +35,7 @@
 <script>
 import EncryptAndDownload from './components/EncryptAndDownload.vue'
 import HeadPage from './components/HeadPage.vue'
-import { getArrDefinition, version, master_key_signing_path, hub_testnet, hub } from './modules/conf.js'
+import { getArrDefinition, master_key_signing_path, hub_testnet, hub } from './modules/conf.js'
 import LargeButton from './components/LargeButton.vue'
 
 const crypto = require('crypto');
@@ -97,9 +97,6 @@ export default {
 			}
 		},
 		checkSolvency: function(){
-			console.log("checkSolvency");
-			console.log(hub_testnet);
-						console.log(hub);
 
 			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (this.config.is_testnet ? true :false) });
 			const addresses = [this.keys_set_properties.address];
@@ -117,7 +114,6 @@ export default {
 		},
 		broadcast: function(){
 			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (this.config.is_testnet ? true :false) });
-			const addresses = [this.keys_set_properties.address];
 
 			const wif = toWif(Buffer.from(this.master_private_key_b64, 'base64'), true);
 
@@ -145,10 +141,8 @@ export default {
 
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
-console.log(this.config);
 		//if no production key specified we create a new one
 		if (!this.production_private_key){
-			console.log("create production_private_key");
 			do {
 				this.production_private_key = crypto.randomBytes(32);
 			} while (!secp256k1.privateKeyVerify(this.production_private_key))

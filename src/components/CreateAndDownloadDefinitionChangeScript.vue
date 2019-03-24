@@ -7,8 +7,6 @@
 
 <script>
 
-const generatePassphrase = require('eff-diceware-passphrase')
-const aes256 = require('aes256');
 
 export default {
 	name: 'CreateAndDownloadDefinitionChangeScript',

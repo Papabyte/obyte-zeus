@@ -1,7 +1,7 @@
 <template>
   <label class="text-reader">
     <input v-if="!file_error" type="file" @change="loadJsonFromFile">
-	<span v-else class="error">Error: invalid file <a class="ok" @click="file_error=false">OK</a></span>
+	<span v-else class="error">Error: invalid file <a class="error-action" @click="file_error=false">OK</a></span>
   </label>
 </template>
 
@@ -19,7 +19,6 @@ export default {
 
 			reader.onload = (eventLoaded) => {
 				try {
-					console.log(eventLoaded.target.result);
 					var	objFromFile = JSON.parse(eventLoaded.target.result);
 					this.$emit("load", objFromFile);
 				} catch {

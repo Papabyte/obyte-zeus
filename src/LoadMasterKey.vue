@@ -1,6 +1,6 @@
 <template>
-  <div id="load-master-key" class="main-page">
-	  	<HeadPage/>
+	<div id="load-master-key" class="main-page">
+		<HeadPage/>
 			<div class="page-title in-line">Load master key</div>
 		<hr />
 			<div v-if="step=='initial'">
@@ -23,8 +23,8 @@
 			<div v-if="step=='load_from_full_shares'">
 				Enter the passphrase for {{objFromFirstFile.owner_name}}'s' share:
 				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onShareDecrypted($event)"/>
-				<div v-for= "index in (objFromFirstFile.required_shares-1)">
-					<LoadFileAndDecrypt @decrypted="onShareDecrypted($event)"/>
+				<div v-for= "index in (objFromFirstFile.required_shares-1)" :key="'file_'+ index">
+					<LoadFileAndDecrypt @decrypted="onShareDecrypted($event)" :index="index"/>
 			</div>
 			<div v-if="step=='master_key_decrypted'">
 				{{master_key}}
@@ -37,7 +37,6 @@
 
 <script>
 import HeadPage from './components/HeadPage.vue'
-import LargeButton from './components/LargeButton.vue'
 import LoadFile from './components/LoadFile.vue'
 import InputPassphraseAndDecrypt from './components/InputPassphraseAndDecrypt.vue'
 import LoadFileAndDecrypt from './components/LoadFileAndDecrypt.vue'
@@ -47,7 +46,6 @@ export default {
 	name: 'loadmasterkey',
 	components: {
 		HeadPage,
-		LargeButton,
 		LoadFile,
 		InputPassphraseAndDecrypt,
 		LoadFileAndDecrypt
@@ -81,7 +79,6 @@ export default {
 		},
 		onShareDecrypted: function(decrypted_data){
 			this.arrSecretShares.push(decrypted_data);
-			console.log(decrypted_data);
 			if (Number(this.objFromFirstFile.keys_set_properties.required_shares) === this.arrSecretShares.length)
 				this.combineSecrets()
 
