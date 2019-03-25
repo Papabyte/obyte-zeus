@@ -62,7 +62,7 @@
 				<div class="icon-download-width table-header">
 					<span>Save</span>
 				</div>
-				<EncryptAndDownload type="master" :name="full_master_key_owner_name" :state="states[0]" :onDownload="onDownload" :data="master_private_key.toString('base64')" :keys_set_properties="keys_set_properties" />
+				<EncryptAndDownload type="master" :name="full_master_key_owner_name" :state="states[0]" :onDownload="onDownload" :data="data_to_be_encrypted" :keys_set_properties="keys_set_properties" />
 				<div class="action-title">
 					Master key shares
 				</div>
@@ -99,13 +99,9 @@ import HeadPage from './components/HeadPage.vue'
 import LargeButton from './components/LargeButton.vue'
 import EncryptAndDownload from './components/EncryptAndDownload.vue'
 import CreateAndDownloadDefinitionChangeScript from './components/CreateAndDownloadDefinitionChangeScript.vue'
-
-
 import { getArrDefinition, version } from './modules/conf.js'
 
-const crypto = require('crypto');
-const secp256k1 = require('secp256k1');
-
+const bitcore = require('bitcore-lib');
 const { getChash160, prod_key_signing_path, master_key_signing_path } = require('byteball/lib/utils');
 
 export default {
@@ -131,7 +127,8 @@ export default {
 			address: null,
 			is_valid_shamir_config: false,
 			master_private_key: null,
-			production_private_key: null,
+			data_to_be_encrypted: null,
+			production_private_key_buff: null,
 			new_definition_chash: "",
 			required_shares: 2,
 			total_shares: 2,
@@ -156,7 +153,7 @@ export default {
 				params:{
 					config:this.config,
 					address: this.address,
-					production_private_key: this.production_private_key,
+					production_private_key_buff: this.production_private_key_buff,
 					keys_set_properties: this.keys_set_properties,
 					master_private_key_b64: this.previous_master_key_b64,
 					new_definition_chash: this.new_definition_chash
@@ -208,7 +205,7 @@ export default {
 		},
 		createShamirSecretShares(){
 			const sss = require('secrets.js-grempe');
-			this.shamir_secret_shares = sss.share(this.master_private_key.toString('hex'), this.total_shares_number,Number(this.required_shares));
+			this.shamir_secret_shares = sss.share(Buffer.from(this.data_to_be_encrypted).toString('hex'), this.total_shares_number,Number(this.required_shares));
 			this.initialize_states_array(this.shamir_secret_shares.length + 1);// number of shares + 1 master key
 			this.onDownload();
 		}
@@ -240,34 +237,38 @@ export default {
 			this.$router.replace('/');
 
 
+
+
 		//generation of production and master private keys
-		do {
-			this.master_private_key = crypto.randomBytes(32);
-		} while (!secp256k1.privateKeyVerify(this.master_private_key))
 
-		do {
-			this.production_private_key = crypto.randomBytes(32);
-		} while (!secp256k1.privateKeyVerify(this.production_private_key))
+		const master_private_key = new bitcore.PrivateKey();
 
-		//creation of production and master public keys
-		var master_public_key_b64 = secp256k1.publicKeyCreate(this.master_private_key).toString('base64');
-		var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
+		const production_hd_private_key = new bitcore.HDPrivateKey();
 
-		this.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
+		const production_hd_private_key_b64 = production_hd_private_key.toBuffer().toString('base64');
+
+
+		const master_public_key_b64 = master_private_key.toPublicKey().toBuffer().toString('base64');
+		const production_public_key_b64 = production_hd_private_key.hdPublicKey.derive('m/0').toString('base64');
+		this.production_private_key_buff = production_hd_private_key.derive('m/0').privateKey.toBuffer();
+
+		const new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
 		if (!this.config.is_existing_address){
-			this.address = this.new_definition_chash;
-			this.keys_set_properties.first_definition = getArrDefinition(master_public_key_b64, production_public_key_b64);
+			this.address = new_definition_chash;
 		}
 		
+		this.data_to_be_encrypted =  master_private_key.toBuffer().toString('base64') + "-" + + production_hd_private_key_b64;
+		this.data_to_be_encrypted += "-" + getChash160(this.data_to_be_encrypted); //used to check we correctly decrypt data
+
 		//keys_set_properties will be duplicated in every generated file
-		this.keys_set_properties.id = Math.floor(Date.now() / 1000);
+		this.keys_set_properties.id = Math.floor(Date.now() / 1000); //id used in master and shared secret file names
 		this.keys_set_properties.address = this.address;
-		this.keys_set_properties.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
+		this.keys_set_properties.new_definition_chash = new_definition_chash;
 		this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 
 		this.keys_set_properties.prod_key_signing_path = prod_key_signing_path;
 		this.keys_set_properties.master_key_signing_path = master_key_signing_path;
-		this.version = version;
+		this.keys_set_properties.version = version;
 
 	}
 

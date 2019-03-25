@@ -4,30 +4,35 @@
 
 		<div class="page-title">Save production key for {{keys_set_properties.address}}</div>
 		<hr />
-	<div >
-		<div class="action-title">
-				Production key
-		</div>
-		<div class="owner-width table-header">Owner</div>
+		<div >
+				<div class="instructions">
+					These file and passphrase are to be used by your IT team.
+				</div>
+			<div class="action-title">
+					Production key
+			</div>
+			<div class="owner-width table-header">Owner</div>
 
-		<div class="passphrase passphrase-width table-header">
-			Passphrase
+			<div class="passphrase passphrase-width table-header">
+				Passphrase
+			</div>
+			<div class="icon-download-width table-header">
+				<span>Save</span>
+			</div>
+			<EncryptAndDownload type="prod" name="IT team" :state="state" :onDownload="onDownload" :data="production_private_key_buff.toString('base64')" :keys_set_properties="keys_set_properties" />
 		</div>
-		<div class="icon-download-width table-header">
-			<span>Save</span>
+		<div v-if = "step == 'broadcast'">
+			<div class='broadcast-error'>
+				<span v-if="error" class="error">{{error}} <a class="error-action" @click="retry">retry</a></span>
+			</div>
+			<LargeButton v-if="can_be_activated" label= "Activate this production key" :onClick="broadcast" class="button-ok"/>
+			{{result}}
 		</div>
-		<EncryptAndDownload type="prod" name="IT team" :state="state" :onDownload="onDownload" :data="production_private_key.toString('base64')" :keys_set_properties="keys_set_properties" />
-	</div>
-	<div v-if = "step == 'broadcast'">
-		<div class='broadcast-error'>
-			<span v-if="error" class="error">{{error}} <a class="error-action" @click="retry">retry</a></span>
+		<div v-if = "step == 'complete'">
+			<div class="completed">
+				{{instructions_when_complete}}
+			</div>
 		</div>
-		<LargeButton v-if="can_be_activated" label= "Activate this production key" :onClick="broadcast" class="button-ok"/>
-		{{result}}
-	</div>
-	<div v-if = "step == 'complete'">
-		{{instructions_when_complete}}
-	</div>
 	</div>
 
 </template>
@@ -59,9 +64,12 @@ export default {
 		new_definition_chash:{
 			type: String
 		},
-		production_private_key:{
-			type: String,
+		production_private_key_buff:{
+			type: Buffer,
 			default: null
+		},
+		production_hd_private_key_b64:{
+			type: String
 		},
 		master_private_key_b64:{
 			type: String
@@ -142,14 +150,14 @@ export default {
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
 		//if no production key specified we create a new one
-		if (!this.production_private_key){
+		if (!this.production_private_key_buff){
 			do {
-				this.production_private_key = crypto.randomBytes(32);
-			} while (!secp256k1.privateKeyVerify(this.production_private_key))
-	
+				this.production_private_key_buff = crypto.randomBytes(32);
+			} while (!secp256k1.privateKeyVerify(this.production_private_key_buff))
+
 			//creation of production and master public keys
 			var master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.master_private_key_b64, 'base64')).toString('base64');
-			var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key).toString('base64');
+			var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key_buff).toString('base64');
 			this.keys_set_properties.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
 			this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 		}
@@ -165,5 +173,11 @@ export default {
 		color:red;
 		text-align:center;
 		padding-top:40px;
+	}
+
+	.completed {
+		text-align:center;
+		padding-top:40px;
+		font-size: 25px;
 	}
 </style>

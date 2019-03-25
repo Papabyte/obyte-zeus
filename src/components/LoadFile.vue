@@ -1,7 +1,7 @@
 <template>
   <label class="text-reader">
     <input v-if="!file_error" type="file" @change="loadJsonFromFile">
-	<span v-else class="error">Error: invalid file <a class="error-action" @click="file_error=false">OK</a></span>
+	<span v-else class="error">Error: invalid file <a class="error-action" @click="file_error=false">Retry</a></span>
   </label>
 </template>
 
@@ -24,6 +24,8 @@ export default {
 				} catch {
 					this.file_error = true;
 				}
+			if (!objFromFile.encypted_data)
+				this.file_error = true;
 			}
 			reader.readAsText(file);
 		}

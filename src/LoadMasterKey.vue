@@ -1,8 +1,9 @@
 <template>
 	<div id="load-master-key" class="main-page">
 		<HeadPage/>
-			<div class="page-title in-line">Load master key</div>
-		<hr />
+			<div class="page-title in-line">Load master key
+			</div>
+				<hr />
 			<div v-if="step=='initial'">
 				<div class="instructions">
 					Open the full master key file or one secret share file
@@ -13,23 +14,21 @@
 
 			</div>
 			<div v-if="step=='load_from_full_master_key'">
-								<div class="instructions">
+					<div class="instructions">
+						Enter the passphrase corresponding to the full master key:
+					</div>
 
-				Enter the passphrase corresponding to the full master key:
-								</div>
-
-				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onMasterKeyDecrypted($event)"/>
+				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onFullDataDecrypted($event)"/>
 			</div>
 			<div v-if="step=='load_from_full_shares'">
 				Enter the passphrase for {{objFromFirstFile.owner_name}}'s' share:
 				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onShareDecrypted($event)"/>
 				<div v-for= "index in (objFromFirstFile.required_shares-1)" :key="'file_'+ index">
 					<LoadFileAndDecrypt @decrypted="onShareDecrypted($event)" :index="index"/>
-			</div>
-			<div v-if="step=='master_key_decrypted'">
-				{{master_key}}
-			</div>
-
+				</div>
+		</div>
+		<div  v-if="error" class="error">
+			Invalid passphrase, try again.
 		</div>
 	</div>
 
@@ -40,6 +39,8 @@ import HeadPage from './components/HeadPage.vue'
 import LoadFile from './components/LoadFile.vue'
 import InputPassphraseAndDecrypt from './components/InputPassphraseAndDecrypt.vue'
 import LoadFileAndDecrypt from './components/LoadFileAndDecrypt.vue'
+
+const { getChash160 } = require('byteball/lib/utils');
 
 
 export default {
@@ -60,9 +61,10 @@ export default {
 			step : "initial",
 			objFromFirstFile : {},
 			master_key:"",
+			production_hd_private_key_b64:"",
+			master_key_b64:"",
 			arrSecretShares: [],
-			master_key_b64:""
-
+			error: false
 		}
 	},
 	methods:{
@@ -83,20 +85,34 @@ export default {
 				this.combineSecrets()
 
 		},
-		onMasterKeyDecrypted: function(decrypted_data){
-			this.master_key_b64 = decrypted_data;
-			this.goNext();
+		onFullDataDecrypted: function(decrypted_data){
+			this.decrypted_data = decrypted_data;
+				this.extractData(decrypted_data);
 		},
 		combineSecrets: function(){
 			const sss = require('secrets.js-grempe');
-			this.master_key_b64 = Buffer.from(sss.combine(this.arrSecretShares),'hex').toString('base64');
+			const decrypted_data = Buffer.from(sss.combine(this.arrSecretShares),'hex').toString();
+			this.extractData(decrypted_data);
+		},
+		extractData: function(decrypted_data){
+			const arrData = decrypted_data.split("-");
+
+			if (arrData.length != 3)
+				return this.onPassPhraseError();
+
+			if (getChash160(arrData[0]+"-"+ arrData[1]) != arrData[2])
+				return this.onPassPhraseError();
+
+			this.master_key_b64 = arrData[0];
+			this.production_hd_private_key_b64 = arrData[1];
+
 			this.goNext();
 		},
+		onPassPhraseError: function(){
+
+			return this.error = true;
+		},
 		goNext: function(){
-//new_set_of_keys_existing_address
-//new_set_of_keys_new_address
-//renew_set_of_keys
-//renew_production_key
 
 			if (this.config.action == "renew_set_of_keys"){
 				this.$router.push({
