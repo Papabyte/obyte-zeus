@@ -19,7 +19,7 @@
 			<div class="icon-download-width table-header">
 				<span>Save</span>
 			</div>
-			<EncryptAndDownload type="prod" name="IT team" :state="state" :onDownload="onDownload" :data="production_private_key_buff.toString('base64')" :keys_set_properties="keys_set_properties" />
+			<EncryptAndDownload type="prod" name="IT team" :state="state" :onDownload="onDownload" :data="data_to_be_encrypted" :keys_set_properties="keys_set_properties" />
 		</div>
 		<div v-if = "step == 'broadcast'">
 			<div class='broadcast-error'>
@@ -61,9 +61,6 @@ export default {
 			type: Object,
 			required: true
 		},
-		new_definition_chash:{
-			type: String
-		},
 		production_private_key_buff:{
 			type: Buffer,
 			default: null
@@ -86,6 +83,7 @@ export default {
 			state: {},
 			balance: 0,
 			error:'',
+			data_to_be_encrypted: "",
 			can_be_activated: false,
 			result: null,
 			arrDefinition: []
@@ -128,7 +126,6 @@ export default {
 			const params =   {
 				definition_chash: this.keys_set_properties.new_definition_chash
 			}
-
 			const conf = {
 				wif: wif,
 				address: this.keys_set_properties.address,
@@ -158,9 +155,12 @@ export default {
 			//creation of production and master public keys
 			var master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.master_private_key_b64, 'base64')).toString('base64');
 			var production_public_key_b64 = secp256k1.publicKeyCreate(this.production_private_key_buff).toString('base64');
-			this.keys_set_properties.new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
+			this.keys_set_properties.definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
 			this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 		}
+
+		const production_private_key_b64 = this.production_private_key_buff.toString('base64');
+		this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
 
 	}
 }
