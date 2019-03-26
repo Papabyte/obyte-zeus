@@ -128,11 +128,23 @@ export default {
 	},
 	props: {
 		config: {
-			type: Object
+			type: Object,
+			default: null
 		},
-		previous_master_key_b64: {
-			type: String
+		previous_master_private_key_b64: {
+			type: String,
+			default: null
 		},
+		previous_production_private_hd_key_b64: {
+			type: String,
+			default: null
+		},
+		keys_set_properties: {
+			type: Object,
+			default() {
+				return {}
+			}
+		}
 	},
 	data: function(){
 		return {
@@ -149,10 +161,10 @@ export default {
 			total_shares_number: 2,
 			names: [],
 			shamir_secret_shares: [],
-			keys_set_properties: {},
 			states: [],
 			full_master_key_owner_name: "",
 			remaining_savings: 0,
+			production_private_hd_key_b64: "",
 			step: "initial"
 		}
 	},
@@ -162,18 +174,29 @@ export default {
 		},
 		downloadProdKey: function(){
 
-			this.$router.push({
-				name: 'download_prod_key_and_change_definition', 
-				params: {
-					config: this.config,
-					address: this.address,
-					production_private_key_buff: this.production_private_key_buff,
-					keys_set_properties: this.keys_set_properties,
-					master_private_key_b64: this.previous_master_key_b64,
-					new_definition_chash: this.new_definition_chash
-				}
-			});
-
+			if (this.config.action == "renew_set_of_keys"){
+				this.$router.push({
+					name: 'download_prod_key_and_change_definition', 
+					params: {
+						config: this.config,
+						keys_set_properties: this.keys_set_properties,
+						previous_master_private_key_b64: this.previous_master_private_key_b64,
+						previous_production_private_hd_key_b64: this.previous_production_private_hd_key_b64,
+						new_definition_chash: this.new_definition_chash
+					}
+				});
+			} else if (this.config.action == 'new_set_of_keys_existing_address' || this.config.action == 'new_set_of_keys_new_address'){
+				this.keys_set_properties.address = this.address;
+				this.$router.push({
+					name: 'download_prod_key_and_change_definition', 
+					params: {
+						config: this.config,
+						keys_set_properties: this.keys_set_properties,
+						production_private_hd_key_b64: this.production_private_hd_key_b64,
+						new_definition_chash: this.new_definition_chash
+					}
+				});
+			}
 
 		},
 		//each time a file is downloaded we refresh download countdown and set are_full_key_and_shares_saved=true when finished
@@ -196,7 +219,6 @@ export default {
 		onOk: function(){
 			this.keys_set_properties.required_shares = this.required_shares;
 			this.keys_set_properties.total_shares = this.total_shares_number;
-			this.keys_set_properties.address = this.address;
 			this.createShamirSecretShares();
 			this.step = "secret_created";
 		},
@@ -255,27 +277,24 @@ export default {
 
 		const master_private_key = new bitcore.PrivateKey();
 
-		const production_hd_private_key = new bitcore.HDPrivateKey();
-
-		const production_hd_private_key_b64 = production_hd_private_key.toBuffer().toString('base64');
-
+		const production_private_hd_key = new bitcore.HDPrivateKey();
+		this.production_private_hd_key_b64 = production_private_hd_key.toBuffer().toString('base64');
 
 		const master_public_key_b64 = master_private_key.toPublicKey().toBuffer().toString('base64');
-		const production_public_key_b64 = production_hd_private_key.hdPublicKey.derive('m/0').toString('base64');
-		this.production_private_key_buff = production_hd_private_key.derive('m/0').privateKey.toBuffer();
+		const production_public_key_b64 = production_private_hd_key.hdPublicKey.derive('m/0').toString('base64');
+		//this.production_private_key_buff = production_private_hd_key.derive('m/0').privateKey.toBuffer();
 
 		const new_definition_chash = getChash160(getArrDefinition(master_public_key_b64, production_public_key_b64));
 		if (!this.config.is_existing_address){
 			this.address = new_definition_chash;
 		}
-		
-		this.data_to_be_encrypted =  master_private_key.toBuffer().toString('base64') + "-" + + production_hd_private_key_b64;
+
+		this.data_to_be_encrypted =  master_private_key.toBuffer().toString('base64') + "-" +  this.production_private_hd_key_b64;
 		this.data_to_be_encrypted += "-" + getChash160(this.data_to_be_encrypted); //used to check we correctly decrypt data
 
 		//keys_set_properties will be duplicated in every generated file
 		this.keys_set_properties.id = Math.floor(Date.now() / 1000); //id used in master and shared secret file names
-		this.keys_set_properties.address = this.address;
-		this.keys_set_properties.new_definition_chash = new_definition_chash;
+		this.keys_set_properties.definition_chash = new_definition_chash;
 		this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 
 		this.keys_set_properties.prod_key_signing_path = prod_key_signing_path;

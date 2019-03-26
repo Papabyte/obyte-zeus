@@ -28,7 +28,7 @@
 			</div>
 		</div>
 		<div  v-if="error" class="error">
-			Invalid passphrase, try again.
+			Invalid passphrase.
 		</div>
 	</div>
 
@@ -61,8 +61,8 @@ export default {
 			step: "initial",
 			objFromFirstFile: {},
 			master_key: "",
-			production_hd_private_key_b64: "",
-			master_key_b64: "",
+			production_hd_key_b64: "",
+			master_private_key_b64: "",
 			arrSecretShares: [],
 			error: false
 		}
@@ -103,8 +103,8 @@ export default {
 			if (getChash160(arrData[0] + "-" + arrData[1]) != arrData[2])
 				return this.onPassPhraseError();
 
-			this.master_key_b64 = arrData[0];
-			this.production_hd_private_key_b64 = arrData[1];
+			this.master_private_key_b64 = arrData[0];
+			this.production_private_hd_key_b64 = arrData[1];
 
 			this.goNext();
 		},
@@ -119,7 +119,9 @@ export default {
 					name: 'createmasterkey', 
 					params: {
 						config: this.config,
-						previous_master_key_b64: this.master_key_b64
+						keys_set_properties: this.objFromFirstFile.keys_set_properties,
+						previous_master_private_key_b64: this.master_private_key_b64,
+						previous_production_private_hd_key_b64: this.production_private_hd_key_b64
 					}
 				});
 			}
@@ -130,7 +132,8 @@ export default {
 					params: {
 						config: this.config,
 						keys_set_properties: this.objFromFirstFile.keys_set_properties,
-						master_private_key_b64: this.master_key_b64,
+						master_private_key_b64: this.master_private_key_b64,
+						previous_production_private_hd_key_b64: this.production_private_hd_key_b64
 					}
 				});
 			}
@@ -142,7 +145,6 @@ export default {
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
 
-			
 	}
 }
 </script>
