@@ -3,10 +3,10 @@
 		<div v-for="index in objFromFile.passphrase_length" class="in-line" :key="index">
 			<input type="text" v-model="arrWords[index-1]" placeholder="ex: acid" class="word in-line" :disabled="is_passphrase_complete">
 			<div class="icon-valid-wrapper in-line">
-			<img v-show="arrStatuses[index-1]" src="icon-valid.svg" height="20px">
+				<img v-show="arrStatuses[index-1]" src="icon-valid.svg" height="20px">
 			</div>
 		</div>
-			<div v-if="is_passphrase_complete">
+		<div v-if="is_passphrase_complete">
 		
 		</div>
 	</div>
@@ -20,7 +20,7 @@ const aes256 = require('aes256');
 
 export default {
 	name: 'InputPassphraseAndDecrypt',
-	props:  {
+	props: {
 		objFromFile: {
 			type: Object,
 			required: true
@@ -29,11 +29,11 @@ export default {
 	data: function(){
 		return {
 			arrWords: [],
-			arrStatuses:[],
+			arrStatuses: [],
 			is_passphrase_complete: false
 		}
 	},
-	watch:{
+	watch: {
 		//total shares cannot be inferior to required shares
 		arrWords: function () {	
 			var count = 0;
@@ -63,8 +63,8 @@ export default {
 	created: function(){
 		//we create arrays for words and their status
 		for (var i = 0; i < this.objFromFile.passphrase_length; i++){
-			this.arrStatuses[i]=false;
-			this.arrWords[i]="";
+			this.arrStatuses[i] = false;
+			this.arrWords[i] = "";
 		}
 
 	}

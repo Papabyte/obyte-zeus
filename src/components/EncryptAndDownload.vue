@@ -4,16 +4,16 @@
 
 		<div class="passphrase passphrase-width">
 			<div v-if="!is_passphrase_hidden" v-on:click="is_passphrase_hidden=true">
-					{{passphrase}}
-					<img src="icon-hide.svg" class="icon-hide"  >
+				{{passphrase}}
+				<img src="icon-hide.svg" class="icon-hide"  >
 			</div>
 			<div v-if="is_passphrase_hidden" v-on:click="is_passphrase_hidden=false;is_icon_download_disabled=false;" >
 				<img src="icon-show.svg" class="icon-show">
 			</div>
 		</div>
 		<div class="icon-download-width">
-				<span v-if="is_icon_download_disabled" ><img src="icon-download-disabled.svg" height="20px"></span>
-				<span v-else v-on:click="download" class="icon-download"><img src="icon-download.svg" height="20px"></span>
+			<span v-if="is_icon_download_disabled" ><img src="icon-download-disabled.svg" height="20px"></span>
+			<span v-else v-on:click="download" class="icon-download"><img src="icon-download.svg" height="20px"></span>
 		</div>
 	</div>
 </template>
@@ -26,12 +26,12 @@ import { passphrase_length } from '../modules/conf.js'
 
 export default {
 	name: 'EncryptAndDownload',
-	props:  {
+	props: {
 		keys_set_properties: {
 			type: Object,
 			required: true
 		},
-		type:{
+		type: {
 			type: String,
 			required: true
 		},
@@ -43,11 +43,11 @@ export default {
 			type: String,
 			required: true
 		},
-		state:{
+		state: {
 			type: Object,
 			required: true
 		},
-		onDownload:{
+		onDownload: {
 			type: Function,
 			required: true
 		}
@@ -56,7 +56,7 @@ export default {
 		return {
 			passphrase: "",
 			encrypted_data: "",
-			jsonString:"",
+			jsonString: "",
 			url: null,
 			is_passphrase_hidden: true,
 			is_icon_download_disabled: true
@@ -68,7 +68,7 @@ export default {
 			this.state.is_downloaded = true;
 			const link = document.createElement('a')
 			link.href = this.url
-			link.setAttribute('download', this.name + '-'+ this.keys_set_properties.address+'-'+this.keys_set_properties.id+ (this.type == 'prod' ? '-' + new Date().toISOString().slice(0,10) : '') +'.'+ this.type) //or any other extension
+			link.setAttribute('download', this.name + '-' + this.keys_set_properties.address + '-' + this.keys_set_properties.id + (this.type == 'prod' ? '-' + new Date().toISOString().slice(0,10) : '') + '.' + this.type) //or any other extension
 			document.body.appendChild(link)
 			link.click()
 			this.onDownload();
@@ -80,20 +80,20 @@ export default {
 		this.encrypted_data = aes256.encrypt(this.passphrase, this.data);
 		this.jsonString = JSON.stringify({
 			type: this.type, 
-			encryption:"AES256", 
+			encryption: "AES256", 
 			encrypted_data: this.encrypted_data, 
 			owner_name: this.name,
 			passphrase_length: passphrase_length,
 			keys_set_properties: this.keys_set_properties
 		});
 
-			var data = new Blob([this.jsonString], {type: "application/json"});
-			// If we are replacing a previously generated file we need to
-			// manually revoke the object URL to avoid memory leaks.
-			if (this.url !== null) {
-				window.URL.revokeObjectURL(this.url);
-			}
-			this.url = window.URL.createObjectURL(data);
+		var data = new Blob([this.jsonString], {type: "application/json"});
+		// If we are replacing a previously generated file we need to
+		// manually revoke the object URL to avoid memory leaks.
+		if (this.url !== null) {
+			window.URL.revokeObjectURL(this.url);
+		}
+		this.url = window.URL.createObjectURL(data);
 
 	}
 }

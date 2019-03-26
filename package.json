@@ -41,7 +41,32 @@
 			"plugin:vue/essential",
 			"eslint:recommended"
 		],
-		"rules": {},
+		"rules": {
+			"indent": ["error", "tab"],
+			"brace-style": ["error"],
+			"comma-style": ["error"],
+			"no-unneeded-ternary": ["error"],
+			"space-infix-ops": ["error"],
+			"object-property-newline": ["error",{"allowAllPropertiesOnSameLine": false}],
+			"no-multiple-empty-lines": ["error"],
+			"key-spacing" : ["error", {"beforeColon": false}],
+			"vue/html-indent": ["error", "tab", {
+				"attribute": 1,
+				"baseIndent": 1,
+				"closeBracket": 0,
+				"alignAttributesVertically": true,
+				"ignores": []
+			}],
+			"vue/max-attributes-per-line": ["error", {
+				"singleline": 5,
+				"multiline": {
+					"max": 1,
+					"allowFirstLine": false
+				}
+			}], 
+			"vue/this-in-template": ["error", "never"]
+
+		},
 		"parserOptions": {
 			"parser": "babel-eslint"
 		}

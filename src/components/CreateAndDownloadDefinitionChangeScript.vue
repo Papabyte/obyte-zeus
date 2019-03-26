@@ -10,7 +10,7 @@
 
 export default {
 	name: 'CreateAndDownloadDefinitionChangeScript',
-	props:  {
+	props: {
 		address: {
 			type: String,
 			required: true
@@ -19,7 +19,7 @@ export default {
 			type: String,
 			required: true
 		},
-		onDownload:{
+		onDownload: {
 			type: Function,
 			required: true
 		}
@@ -63,7 +63,7 @@ export default {
 				}
 			});
 			
-			composer.composeDefinitionChangeJoint("`+ this.address +`", "`+ this.new_definition_chash + `", headlessWallet.signer, callbacks);
+			composer.composeDefinitionChangeJoint("` + this.address + `", "` + this.new_definition_chash + `", headlessWallet.signer, callbacks);
 		}
 
 		eventBus.on('headless_wallet_ready', createDefinitionChange);

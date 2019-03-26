@@ -1,15 +1,15 @@
 <template>
-  <div id="get-production-key" class="main-page">
+	<div id="get-production-key" class="main-page">
 		<HeadPage/>
 
 		<div class="page-title">Save production key for {{keys_set_properties.address}}</div>
 		<hr />
 		<div >
-				<div class="instructions">
-					These file and passphrase are to be used by your IT team.
-				</div>
+			<div class="instructions">
+				These file and passphrase are to be used by your IT team.
+			</div>
 			<div class="action-title">
-					Production key
+				Production key
 			</div>
 			<div class="owner-width table-header">Owner</div>
 
@@ -19,7 +19,13 @@
 			<div class="icon-download-width table-header">
 				<span>Save</span>
 			</div>
-			<EncryptAndDownload type="prod" name="IT team" :state="state" :onDownload="onDownload" :data="data_to_be_encrypted" :keys_set_properties="keys_set_properties" />
+			<EncryptAndDownload
+				type="prod"
+				name="IT team"
+				:state="state"
+				:onDownload="onDownload"
+				:data="data_to_be_encrypted"
+				:keys_set_properties="keys_set_properties" />
 		</div>
 		<div v-if = "step == 'broadcast'">
 			<div class='broadcast-error'>
@@ -56,41 +62,41 @@ export default {
 		HeadPage,
 		LargeButton
 	},
-	props:{
-		config:{
+	props: {
+		config: {
 			type: Object,
 			required: true
 		},
-		production_private_key_buff:{
+		production_private_key_buff: {
 			type: Buffer,
 			default: null
 		},
-		production_hd_private_key_b64:{
+		production_hd_private_key_b64: {
 			type: String
 		},
-		master_private_key_b64:{
+		master_private_key_b64: {
 			type: String
 		},
-		keys_set_properties:{
+		keys_set_properties: {
 			type: Object,
 			required: true
 		}
 
 	},
-	data:function(){
+	data: function(){
 		return {
-			step : "initial",
+			step: "initial",
 			state: {},
 			balance: 0,
-			error:'',
+			error: '',
 			data_to_be_encrypted: "",
 			can_be_activated: false,
 			result: null,
 			arrDefinition: []
 		}
 	},
-	methods:{
-		onDownload:function(){
+	methods: {
+		onDownload: function(){
 	
 			if (this.config.action == 'new_set_of_keys_existing_address' || this.config.action == 'new_set_of_keys_new_address'){
 				this.step = "complete";
@@ -104,7 +110,7 @@ export default {
 		},
 		checkSolvency: function(){
 
-			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (this.config.is_testnet ? true :false) });
+			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
 			const addresses = [this.keys_set_properties.address];
 
 			client.api.getBalances(addresses, (err, result)=> {
@@ -119,7 +125,7 @@ export default {
 
 		},
 		broadcast: function(){
-			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (this.config.is_testnet ? true :false) });
+			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
 
 			const wif = toWif(Buffer.from(this.master_private_key_b64, 'base64'), true);
 

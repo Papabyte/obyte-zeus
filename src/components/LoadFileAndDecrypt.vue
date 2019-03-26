@@ -1,5 +1,5 @@
 <template>
-  <div id="load-file-decrypt" class="main-page">
+	<div id="load-file-decrypt" class="main-page">
 		<div v-if="step == 'initial'">
 			Open secret share file
 			<LoadFile @load="onFileLoaded($event)" />
@@ -23,22 +23,22 @@ export default {
 		LoadFile,
 		InputPassphraseAndDecrypt
 	},
-	props:{
-		config:{
+	props: {
+		config: {
 			type: Object
 		}
 	},
-	data:function(){
+	data: function(){
 		return {
-			step : "initial",
-			objFromFile : {}
+			step: "initial",
+			objFromFile: {}
 		}
 	},
-	methods:{
-		onFileLoaded:function(objFromFile){
+	methods: {
+		onFileLoaded: function(objFromFile){
 			if (objFromFile.type == "share"){
 				this.objFromFile = objFromFile;
-				this.step="decrypt";
+				this.step = "decrypt";
 			}
 		},
 		onShareDecrypted: function(decrypted_data){

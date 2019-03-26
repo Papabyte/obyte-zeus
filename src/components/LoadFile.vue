@@ -1,15 +1,15 @@
 <template>
-  <label class="text-reader">
-    <input v-if="!file_error" type="file" @change="loadJsonFromFile">
-	<span v-else class="error">Error: invalid file <a class="error-action" @click="file_error=false">Retry</a></span>
-  </label>
+	<label class="text-reader">
+		<input v-if="!file_error" type="file" @change="loadJsonFromFile">
+		<span v-else class="error">Error: invalid file <a class="error-action" @click="file_error=false">Retry</a></span>
+	</label>
 </template>
 
 <script>
 export default {
 	data: function(){
 		return {
-			file_error : false
+			file_error: false
 		}
 	},
 	methods: {
@@ -24,8 +24,8 @@ export default {
 				} catch {
 					this.file_error = true;
 				}
-			if (!objFromFile.encypted_data)
-				this.file_error = true;
+				if (!objFromFile.encypted_data)
+					this.file_error = true;
 			}
 			reader.readAsText(file);
 		}

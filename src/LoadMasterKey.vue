@@ -1,31 +1,31 @@
 <template>
 	<div id="load-master-key" class="main-page">
 		<HeadPage/>
-			<div class="page-title in-line">Load master key
+		<div class="page-title in-line">Load master key
+		</div>
+		<hr />
+		<div v-if="step=='initial'">
+			<div class="instructions">
+				Open the full master key file or one secret share file
 			</div>
-				<hr />
-			<div v-if="step=='initial'">
-				<div class="instructions">
-					Open the full master key file or one secret share file
-				</div>
-				<div class="load-file-wrapper">
+			<div class="load-file-wrapper">
 				<LoadFile @load="onInitialLoad($event)"/>
-				</div>
-
 			</div>
-			<div v-if="step=='load_from_full_master_key'">
-					<div class="instructions">
-						Enter the passphrase corresponding to the full master key:
-					</div>
 
-				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onFullDataDecrypted($event)"/>
+		</div>
+		<div v-if="step=='load_from_full_master_key'">
+			<div class="instructions">
+				Enter the passphrase corresponding to the full master key:
 			</div>
-			<div v-if="step=='load_from_full_shares'">
-				Enter the passphrase for {{objFromFirstFile.owner_name}}'s' share:
-				<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onShareDecrypted($event)"/>
-				<div v-for= "index in (objFromFirstFile.required_shares-1)" :key="'file_'+ index">
-					<LoadFileAndDecrypt @decrypted="onShareDecrypted($event)" :index="index"/>
-				</div>
+
+			<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onFullDataDecrypted($event)"/>
+		</div>
+		<div v-if="step=='load_from_full_shares'">
+			Enter the passphrase for {{objFromFirstFile.owner_name}}'s' share:
+			<InputPassphraseAndDecrypt :objFromFile="objFromFirstFile"  @decrypted="onShareDecrypted($event)"/>
+			<div v-for= "index in (objFromFirstFile.required_shares-1)" :key="'file_'+ index">
+				<LoadFileAndDecrypt @decrypted="onShareDecrypted($event)" :index="index"/>
+			</div>
 		</div>
 		<div  v-if="error" class="error">
 			Invalid passphrase, try again.
@@ -51,25 +51,25 @@ export default {
 		InputPassphraseAndDecrypt,
 		LoadFileAndDecrypt
 	},
-	props:{
-		config:{
+	props: {
+		config: {
 			type: Object
 		}
 	},
-	data:function(){
+	data: function(){
 		return {
-			step : "initial",
-			objFromFirstFile : {},
-			master_key:"",
-			production_hd_private_key_b64:"",
-			master_key_b64:"",
+			step: "initial",
+			objFromFirstFile: {},
+			master_key: "",
+			production_hd_private_key_b64: "",
+			master_key_b64: "",
 			arrSecretShares: [],
 			error: false
 		}
 	},
-	methods:{
+	methods: {
 		//determine if the first file loaded is a full key or a secret share
-		onInitialLoad:function(objFromFile){
+		onInitialLoad: function(objFromFile){
 			if (objFromFile.type == "master"){
 				this.step = "load_from_full_master_key";
 				this.objFromFirstFile = objFromFile;
@@ -87,7 +87,7 @@ export default {
 		},
 		onFullDataDecrypted: function(decrypted_data){
 			this.decrypted_data = decrypted_data;
-				this.extractData(decrypted_data);
+			this.extractData(decrypted_data);
 		},
 		combineSecrets: function(){
 			const sss = require('secrets.js-grempe');
@@ -100,7 +100,7 @@ export default {
 			if (arrData.length != 3)
 				return this.onPassPhraseError();
 
-			if (getChash160(arrData[0]+"-"+ arrData[1]) != arrData[2])
+			if (getChash160(arrData[0] + "-" + arrData[1]) != arrData[2])
 				return this.onPassPhraseError();
 
 			this.master_key_b64 = arrData[0];
@@ -116,9 +116,9 @@ export default {
 
 			if (this.config.action == "renew_set_of_keys"){
 				this.$router.push({
-					name:'createmasterkey', 
-					params:{
-						config:this.config,
+					name: 'createmasterkey', 
+					params: {
+						config: this.config,
 						previous_master_key_b64: this.master_key_b64
 					}
 				});
@@ -126,9 +126,9 @@ export default {
 
 			if (this.config.action == "renew_production_key"){
 				this.$router.push({
-					name:'download_prod_key_and_change_definition', 
-					params:{
-						config:this.config,
+					name: 'download_prod_key_and_change_definition', 
+					params: {
+						config: this.config,
 						keys_set_properties: this.objFromFirstFile.keys_set_properties,
 						master_private_key_b64: this.master_key_b64,
 					}
