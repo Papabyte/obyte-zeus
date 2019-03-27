@@ -4,10 +4,12 @@
 
 		<div class="page-title">Save production key for {{keys_set_properties.address}}</div>
 		<hr />
-		<div v-if = "step == 'initial'">
-			Initializing...
+		<div>
+			<div v-for="line in arr_initialization_logs">
+				{{line}}
+			</div>
 		</div>
-		<div v-if = "step == 'download'">
+		<div v-if = "step == 'download' || step == 'broadcast'">
 			<div class="instructions">
 				These file and passphrase are to be used by your IT team.
 			</div>
@@ -31,16 +33,18 @@
 				:keys_set_properties="keys_set_properties" />
 		</div>
 		<div v-if = "step == 'broadcast'">
-			<div class='broadcast-error'>
-				<span v-if="error" class="error">{{error}} <a class="error-action" @click="retry">retry</a></span>
-			</div>
 			<LargeButton v-if="can_be_activated" label= "Activate this production key" :onClick="broadcast" class="button-ok"/>
-			{{result}}
+				<div v-for="line in arr_broadcast_logs">
+				{{line}}
+			</div>
 		</div>
-		<div v-if = "step == 'complete'">
+		<div v-if = "instructions_when_complete">
 			<div class="completed">
 				{{instructions_when_complete}}
 			</div>
+		</div>
+		<div class='broadcast-error'>
+				<span v-if="error" class="error">{{error}}</span>
 		</div>
 	</div>
 
@@ -92,6 +96,10 @@ export default {
 		previous_production_private_hd_key_b64: {
 			type: String,
 			default: null
+		},
+		master_private_key_b64: {
+			type: String,
+			default: null
 		}
 
 	},
@@ -99,13 +107,15 @@ export default {
 		return {
 			step: "initial",
 			state: {},
-			balance: 0,
 			error: '',
 			data_to_be_encrypted: "",
 			can_be_activated: false,
 			result: null,
 			new_derivation_index: null,
-			array_former_definition: null
+			array_former_definition: null,
+			arr_initialization_logs: [],
+			arr_broadcast_logs :[],
+			instructions_when_complete: null
 		}
 	},
 	methods: {
@@ -120,26 +130,30 @@ export default {
 			}
 	
 		},
-		checkSolvency: function(handle){
+		checkSolvency: function(client, handle){
 
-			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
 			const addresses = [this.keys_set_properties.address];
-
+			this.arr_initialization_logs.push("Requesting balance for  " + this.keys_set_properties.address);
 			client.api.getBalances(addresses, (err, result)=> {
-				this.error = err;
-				this.balance = result[this.keys_set_properties.address] && result[this.keys_set_properties.address].base ? result[this.keys_set_properties.address].base.stable + result[this.keys_set_properties.address].base.pending : 0 ;
-				if (this.balance > 2000){
+				if (err)
+					return handle(err);
+				const balance = result[this.keys_set_properties.address] && result[this.keys_set_properties.address].base ? result[this.keys_set_properties.address].base.stable + result[this.keys_set_properties.address].base.pending : 0 ;
+				this.arr_initialization_logs.push("Balance available  " + balance);
+				if (balance > 2000){
 					this.can_be_activated = true;
-					handle(null);
-				} else
-					this.error = "Address insufficiently funded to broadcast a definition change";
-				handle("insufficient_funds");
+					return handle(null);
+				} else{
+					return handle("Only " + balance + " bytes available on this address. At least 2000 bytes required to broadcast definition change");
+				}
 			});
 
 
 		},
 		broadcast: function(){
-			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
+			this.can_be_activated = false;
+			const selected_hub = this.config.is_testnet ? hub_testnet : hub;
+			this.arr_broadcast_logs.push("Connecting to hub " + hselected_hubub);
+			const client = new obyte_js.Client(selected_hub, { testnet: (!!this.config.is_testnet) });
 			const wif = toWif(Buffer.from(this.previous_master_private_key_b64, 'base64'), true);
 
 			const params =   {
@@ -152,72 +166,87 @@ export default {
 				definition: this.array_former_definition,
 				testnet: this.config.is_testnet
 			};
+			this.arr_broadcast_logs.push("Former definition " + this.array_former_definition);
 
-			client.post.addressDefinitionChange(params, conf, (err, result)=> {
-				this.error = err;
-				this.result = result;
+			this.arr_broadcast_logs.push("Posting address definition change" + hub);
+
+			client.post.addressDefinitionChange(params, conf, (err, unit)=> {
+				this.broadcast_log = "<br>Closing connection";
 				client.close();
+				if (err){
+					this.error = err;
+					this.can_be_activated = true;
+				}
+				this.arr_broadcast_logs.push("Definition change acknowledged in unit: " + unit);
+				this.instructions_when_complete = "All steps completed."
 			});
 
 		},
-		determineLastDerivationIndex: function(previous_master_public_key_b64, previous_production_private_hd_key, handle){
-			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
+		determineLastDerivationIndex: function(client, previous_master_public_key_b64, previous_production_private_hd_key, handle){
+			this.arr_initialization_logs.push("Requesting definition chash for  " + this.keys_set_properties.address);
 
-			client.api.getDefinitionChash({address: this.keys_set_properties.address}, function(err, chash) {
-				console.log(chash);
+			client.api.getDefinitionChash({address: this.keys_set_properties.address}, (err, chash)=>{
+				if (err)
+					this.error = "Request error: " + err;
+
+				this.arr_initialization_logs.push("Current definition chash: " + chash);
+
 				for (var i = 0; i < 100; i++){
-					var production_public_key_b64 = previous_production_private_hd_key.hdPublicKey.derive('m/' + i ).publicKey.toString('base64');
+					var production_public_key_b64 = previous_production_private_hd_key.hdPublicKey.derive('m/' + i ).publicKey.toBuffer().toString('base64');
 					var array_former_definition = getArrDefinition(previous_master_public_key_b64, production_public_key_b64);
-					if (chash == getChash160(array_former_definition))
+	
+					if (chash == getChash160(array_former_definition)){
 						return handle(null, i, array_former_definition);
+					}
 				}
 				return handle("Couldn't find last derivation index");
 			});
 
 		}
 	
-	},	
+	},
 	created: function() {
 
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
 		this.step = "initial";
 
-	
 	},
 	mounted: function(){
 		var production_private_key_b64;
 		if (this.config.action == 'renew_set_of_keys' || this.config.action == 'renew_production_key'){
 
-			const previous_production_private_hd_key = new bitcore.HDPrivateKey(this.previous_production_private_hd_key_b64);
+			const previous_production_private_hd_key = new bitcore.HDPrivateKey(Buffer.from(this.previous_production_private_hd_key_b64, 'base64'));
 			const previous_master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.previous_master_private_key_b64, 'base64')).toString('base64');
+		
+			const selected_hub = this.config.is_testnet ? hub_testnet : hub;
+			this.arr_initialization_logs.push("Connect to hub " + selected_hub );
+			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
 
-			this.checkSolvency((err)=>{
+			this.checkSolvency(client, (err)=>{
 				if (err)
-					return console.log(err)
-				this.determineLastDerivationIndex(previous_master_public_key_b64, previous_production_private_hd_key, (err, index, array_former_definition) => {
+					return this.error = err;
+				this.determineLastDerivationIndex(client, previous_master_public_key_b64, previous_production_private_hd_key, (err, index, array_former_definition) => {
 					if (err)
-						return console.log(err)
+						return this.error = err;
+
+					this.arr_initialization_logs.push("Current derivation index: " + index);
 					this.array_former_definition = array_former_definition;
-					this.previous_derivation_index = index;
 					if ( this.config.action == 'renew_production_key'){
-
-						
+						this.arr_initialization_logs.push("New production key will be derived from index " + (index + 1));
 						const production_private_key = previous_production_private_hd_key.derive('m/' + (index + 1)).privateKey;
-						production_private_key_b64 = production_private_key.privateKey.toBuffer().toString('base64');
-
-						const master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.master_private_key_b64, 'base64')).toBuffer().toString('base64');
+						production_private_key_b64 = production_private_key.toBuffer().toString('base64');
+						const master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.master_private_key_b64, 'base64')).toString('base64');
 						const production_public_key_b64 = production_private_key.toPublicKey().toBuffer().toString('base64');
-
 						this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 						this.keys_set_properties.definition_chash = getChash160(this.keys_set_properties.arrDefinition);
 
 					} else{
 						production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 					}
+					this.arr_initialization_logs.push("Close connection");
 
 					this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
-					console.log(this.data_to_be_encrypted);
 					this.step = 'download';
 
 				});
@@ -228,7 +257,6 @@ export default {
 			production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 
 			this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
-			console.log(this.data_to_be_encrypted);
 
 			this.step = 'download';
 		}

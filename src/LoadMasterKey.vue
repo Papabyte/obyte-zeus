@@ -104,6 +104,7 @@ export default {
 				return this.onPassPhraseError();
 
 			this.master_private_key_b64 = arrData[0];
+			console.log(this.master_private_key_b64);
 			this.production_private_hd_key_b64 = arrData[1];
 
 			this.goNext();
@@ -133,6 +134,7 @@ export default {
 						config: this.config,
 						keys_set_properties: this.objFromFirstFile.keys_set_properties,
 						master_private_key_b64: this.master_private_key_b64,
+						previous_master_private_key_b64: this.master_private_key_b64,
 						previous_production_private_hd_key_b64: this.production_private_hd_key_b64
 					}
 				});
