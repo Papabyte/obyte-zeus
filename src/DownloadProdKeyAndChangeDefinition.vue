@@ -53,7 +53,7 @@ import { getArrDefinition, master_key_signing_path, hub_testnet, hub } from './m
 import LargeButton from './components/LargeButton.vue'
 
 const secp256k1 = require('secp256k1');
-const { toWif, getChash160 } = require('byteball/lib/utils');
+const { toWif, getChash160 } = require('obyte/lib/utils');
 const obyte_js = require('obyte');
 const bitcore = require('bitcore-lib');
 
@@ -74,9 +74,11 @@ export default {
 			type: Buffer,
 			default: null
 		},
-		production_private_hd_key_b64: {
-			type: String,
-			default: null
+		production_private_hd_key: {
+			type: Object,
+			default: function(){
+				return {}
+			}
 
 		},
 		keys_set_properties: {
@@ -102,7 +104,6 @@ export default {
 			data_to_be_encrypted: "",
 			can_be_activated: false,
 			result: null,
-			arrDefinition: [],
 			new_derivation_index: null,
 			array_former_definition: null
 		}
@@ -159,15 +160,15 @@ export default {
 			});
 
 		},
-		determineLastDerivationIndex: function(master_public_key_b64, production_private_hd_key, handle){
+		determineLastDerivationIndex: function(previous_master_public_key_b64, previous_production_private_hd_key, handle){
 			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
 
 			client.api.getDefinitionChash({address: this.keys_set_properties.address}, function(err, chash) {
 				console.log(chash);
 				for (var i = 0; i < 100; i++){
-					var production_public_key_b64 = production_private_hd_key.hdPublicKey.derive('m/' + i ).toString('base64');
-					var array_former_definition = getArrDefinition(master_public_key_b64, production_public_key_b64);
-					if (chash == getChash160())
+					var production_public_key_b64 = previous_production_private_hd_key.hdPublicKey.derive('m/' + i ).publicKey.toString('base64');
+					var array_former_definition = getArrDefinition(previous_master_public_key_b64, production_public_key_b64);
+					if (chash == getChash160(array_former_definition))
 						return handle(null, i, array_former_definition);
 				}
 				return handle("Couldn't find last derivation index");
@@ -184,11 +185,8 @@ export default {
 
 	
 	},
-	computed: function(){
-		if ( this.config.action == 'renew_production_key'){
-			this.production_private_hd_key_b64 = new bitcore.HDPrivateKey().toBuffer().toString('base64');
-		}
-
+	mounted: function(){
+		var production_private_key_b64;
 		if (this.config.action == 'renew_set_of_keys' || this.config.action == 'renew_production_key'){
 
 			const previous_production_private_hd_key = new bitcore.HDPrivateKey(this.previous_production_private_hd_key_b64);
@@ -203,23 +201,37 @@ export default {
 					this.array_former_definition = array_former_definition;
 					this.previous_derivation_index = index;
 					if ( this.config.action == 'renew_production_key'){
-						const production_private_hd_key = previous_production_private_hd_key.hdPublicKey.derive('m/' + (index + 1));
-						this.production_private_hd_key_b64 = production_private_hd_key.toString('base64');
+
+						
+						const production_private_key = previous_production_private_hd_key.derive('m/' + (index + 1)).privateKey;
+						production_private_key_b64 = production_private_key.privateKey.toBuffer().toString('base64');
 
 						const master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.master_private_key_b64, 'base64')).toBuffer().toString('base64');
-						const production_public_key_b64 = production_private_hd_key.toPublicKey().toBuffer().toString('base64');
+						const production_public_key_b64 = production_private_key.toPublicKey().toBuffer().toString('base64');
 
 						this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 						this.keys_set_properties.definition_chash = getChash160(this.keys_set_properties.arrDefinition);
+
+					} else{
+						production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 					}
+
+					this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
+					console.log(this.data_to_be_encrypted);
+					this.step = 'download';
 
 				});
 
 			});
 
-		}
+		} else if (this.config.action == 'new_set_of_keys_existing_address' || this.config.action == 'new_set_of_keys_new_address'){
+			production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 
-		this.data_to_be_encrypted = this.production_private_hd_key_b64 + "-" + getChash160(this.production_private_hd_key_b64);
+			this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
+			console.log(this.data_to_be_encrypted);
+
+			this.step = 'download';
+		}
 	}
 }
 </script>

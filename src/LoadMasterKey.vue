@@ -40,7 +40,7 @@ import LoadFile from './components/LoadFile.vue'
 import InputPassphraseAndDecrypt from './components/InputPassphraseAndDecrypt.vue'
 import LoadFileAndDecrypt from './components/LoadFileAndDecrypt.vue'
 
-const { getChash160 } = require('byteball/lib/utils');
+const { getChash160 } = require('obyte/lib/utils');
 
 
 export default {

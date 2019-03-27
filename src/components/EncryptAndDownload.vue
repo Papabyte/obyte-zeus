@@ -68,7 +68,7 @@ export default {
 			this.state.is_downloaded = true;
 			const link = document.createElement('a')
 			link.href = this.url
-			link.setAttribute('download', this.name + '-' + this.keys_set_properties.address + '-' + this.keys_set_properties.id + (this.type == 'prod' ? '-' + new Date().toISOString().slice(0,10) : '') + '.' + this.type) //or any other extension
+			link.setAttribute('download', this.name + '-' + this.keys_set_properties.address + '-' + this.keys_set_properties.id + '-' + new Date().toISOString().slice(0,10) + '.' + this.type) //or any other extension
 			document.body.appendChild(link)
 			link.click()
 			this.onDownload();
