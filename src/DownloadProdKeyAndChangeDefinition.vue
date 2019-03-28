@@ -4,14 +4,14 @@
 
 		<div class="page-title">Save production key for {{keys_set_properties.address}}</div>
 		<hr />
-		<div>
+		<div class="logs">
 			<div v-for="line in arr_initialization_logs">
 				{{line}}
 			</div>
 		</div>
 		<div v-if = "step == 'download' || step == 'broadcast'">
 			<div class="instructions">
-				These file and passphrase are to be used by your IT team.
+				These file and passphrase are to be used by your IT team:
 			</div>
 			<div class="action-title">
 				Production key
@@ -34,8 +34,10 @@
 		</div>
 		<div v-if = "step == 'broadcast'">
 			<LargeButton v-if="can_be_activated" label= "Activate this production key" :onClick="broadcast" class="button-ok"/>
-			<div v-for="line in arr_broadcast_logs">
-				{{line}}
+			<div  class="logs">
+				<div v-for="line in arr_broadcast_logs">
+					{{line}}
+				</div>
 			</div>
 		</div>
 		<div v-if = "instructions_when_complete">
@@ -57,7 +59,7 @@ import { getArrDefinition, master_key_signing_path, hub_testnet, hub } from './m
 import LargeButton from './components/LargeButton.vue'
 
 const secp256k1 = require('secp256k1');
-const { toWif, getChash160 } = require('obyte/lib/utils');
+const { getChash160 } = require('obyte/lib/utils');
 const obyte_js = require('obyte');
 const bitcore = require('bitcore-lib');
 
@@ -154,13 +156,12 @@ export default {
 			const selected_hub = this.config.is_testnet ? hub_testnet : hub;
 			this.arr_broadcast_logs.push("Connecting to hub " + selected_hub);
 			const client = new obyte_js.Client(selected_hub, { testnet: (!!this.config.is_testnet) });
-			const wif = toWif(Buffer.from(this.previous_master_private_key_b64, 'base64'), true);
 
 			const params =   {
 				definition_chash: this.keys_set_properties.definition_chash
 			}
 			const conf = {
-				wif: wif,
+				privateKey: Buffer.from(this.previous_master_private_key_b64, 'base64'),
 				address: this.keys_set_properties.address,
 				path: master_key_signing_path,
 				definition: this.array_former_definition,
@@ -274,6 +275,10 @@ export default {
 		color:red;
 		text-align:center;
 		padding-top:40px;
+	}
+	.logs{
+		padding:30px;
+
 	}
 
 	.completed {
