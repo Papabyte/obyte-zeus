@@ -121,8 +121,8 @@ export default {
 		}
 	},
 	methods: {
+		//once prod key is saved, we may have to broadcast a definition change depending of the config
 		onDownload: function(){
-	
 			if (this.config.action == 'new_set_of_keys_existing_address' || this.config.action == 'new_set_of_keys_new_address'){
 				this.step = "complete";
 				this.instructions_when_complete = "All steps completed."
@@ -130,10 +130,10 @@ export default {
 			if (this.config.action == 'renew_set_of_keys' || this.config.action == 'renew_production_key'){
 				this.step = "broadcast";
 			}
-	
-		},
-		checkSolvency: function(client, handle){
 
+		},
+		//we send a request to hub to get the balance of the address
+		checkSolvency: function(client, handle){
 			const addresses = [this.keys_set_properties.address];
 			this.arr_initialization_logs.push("Requesting balance for  " + this.keys_set_properties.address);
 			client.api.getBalances(addresses, (err, result)=> {
@@ -168,17 +168,16 @@ export default {
 				testnet: this.config.is_testnet
 			};
 			this.arr_broadcast_logs.push("Former definition " + this.array_former_definition);
-
 			this.arr_broadcast_logs.push("Posting address definition change" + hub);
 
 			client.post.addressDefinitionChange(params, conf, (err, unit)=> {
-				this.broadcast_log = "<br>Closing connection";
+				this.arr_broadcast_logs.push("Closing connection");
 				client.close();
 				if (err){
 					this.error = err;
 					this.can_be_activated = true;
 				}
-				this.arr_broadcast_logs.push("Definition change acknowledged in unit: " + unit);
+				this.arr_broadcast_logs.push("Definition change broadcast in unit: " + unit);
 				this.instructions_when_complete = "All steps completed."
 			});
 
@@ -249,6 +248,7 @@ export default {
 						production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 					}
 					this.arr_initialization_logs.push("Close connection");
+					client.close();
 
 					this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
 					this.step = 'download';
@@ -261,7 +261,6 @@ export default {
 			production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 
 			this.data_to_be_encrypted = production_private_key_b64 + "-" + getChash160(production_private_key_b64);
-
 			this.step = 'download';
 		}
 	}
@@ -278,7 +277,6 @@ export default {
 	}
 	.logs{
 		padding:30px;
-
 	}
 
 	.completed {

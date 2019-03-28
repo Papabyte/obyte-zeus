@@ -5,7 +5,7 @@
 		<div class="page-title">New set of keys creation {{address ? 'for ' + address : ''}}</div>
 		<hr />
 		<div v-if="step=='initial'">
-			<div v-if="config.is_existing_address" id="input-address">
+			<div v-if="is_existing_address" id="input-address">
 				<div class="action-title">
 					Existing address
 				</div>
@@ -152,9 +152,7 @@ export default {
 			are_full_key_and_shares_saved: false,
 			address: null,
 			is_valid_shamir_config: false,
-			master_private_key: null,
 			data_to_be_encrypted: null,
-			production_private_key_buff: null,
 			new_definition_chash: "",
 			required_shares: 2,
 			total_shares: 2,
@@ -166,15 +164,16 @@ export default {
 			remaining_savings: 0,
 			production_private_hd_key: {},
 			master_public_key_b64: '',
-			step: "initial"
+			step: "initial",
+			is_existing_address: false
 		}
 	},
 	methods: {
 		setPropKeyDownloadStep: function(){
 			this.step = 'propose_prod_key_download';
 		},
+		//once master key is saved, we prepare props for production key encryption and saving. For a renewal of master and private key, we pass data required to proceed to address definition change
 		downloadProdKey: function(){
-
 			if (this.config.action == "renew_set_of_keys"){
 				this.$router.push({
 					name: 'download_prod_key_and_change_definition', 
@@ -211,7 +210,7 @@ export default {
 
 			if (count == 0){
 				this.are_full_key_and_shares_saved = true;
-				if (this.config.is_existing_address)
+				if (this.is_existing_address)
 					this.step = 'download_script';
 				else
 					this.step = 'propose_prod_key_download';
@@ -273,22 +272,23 @@ export default {
 		if (!this.config) //return home if no config
 			this.$router.replace('/');
 
+		if (this.config.action == "new_set_of_keys_existing_address")
+			this.is_existing_address = true;
 
 		//generation of production and master private keys
-
 		const master_private_key = new bitcore.PrivateKey();
-
 		this.production_private_hd_key = new bitcore.HDPrivateKey();
-		const production_private_hd_key_b64 = this.production_private_hd_key.toBuffer().toString('base64');
 
+		const production_private_hd_key_b64 = this.production_private_hd_key.toBuffer().toString('base64');
 		this.master_public_key_b64 = master_private_key.toPublicKey().toBuffer().toString('base64');
 		const production_public_key_b64 = this.production_private_hd_key.hdPublicKey.derive('m/0').publicKey.toBuffer().toString('base64');
-		//this.production_private_key_buff = production_private_hd_key.derive('m/0').privateKey.toBuffer();
+
 		const new_definition_chash = getChash160(getArrDefinition(this.master_public_key_b64, production_public_key_b64));
-		if (!this.config.is_existing_address){
+		if (!this.is_existing_address){
 			this.address = new_definition_chash;
 		}
 
+		//we concatenate master private key, production HD private key and a checksum
 		this.data_to_be_encrypted =  master_private_key.toBuffer().toString('base64') + "-" + production_private_hd_key_b64;
 		this.data_to_be_encrypted += "-" + getChash160(this.data_to_be_encrypted); //used to check we correctly decrypt data
 
@@ -340,8 +340,5 @@ export default {
 		text-align: center;
 		color: rgb(114, 5, 5);
 	}
-	.button-ok{
-		margin-top:50px;
 
-	}
 </style>
