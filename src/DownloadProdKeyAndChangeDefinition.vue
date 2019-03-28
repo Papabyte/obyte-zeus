@@ -34,7 +34,7 @@
 		</div>
 		<div v-if = "step == 'broadcast'">
 			<LargeButton v-if="can_be_activated" label= "Activate this production key" :onClick="broadcast" class="button-ok"/>
-				<div v-for="line in arr_broadcast_logs">
+			<div v-for="line in arr_broadcast_logs">
 				{{line}}
 			</div>
 		</div>
@@ -44,7 +44,7 @@
 			</div>
 		</div>
 		<div class='broadcast-error'>
-				<span v-if="error" class="error">{{error}}</span>
+			<span v-if="error" class="error">{{error}}</span>
 		</div>
 	</div>
 
@@ -114,7 +114,7 @@ export default {
 			new_derivation_index: null,
 			array_former_definition: null,
 			arr_initialization_logs: [],
-			arr_broadcast_logs :[],
+			arr_broadcast_logs: [],
 			instructions_when_complete: null
 		}
 	},
@@ -152,7 +152,7 @@ export default {
 		broadcast: function(){
 			this.can_be_activated = false;
 			const selected_hub = this.config.is_testnet ? hub_testnet : hub;
-			this.arr_broadcast_logs.push("Connecting to hub " + hselected_hubub);
+			this.arr_broadcast_logs.push("Connecting to hub " + selected_hub);
 			const client = new obyte_js.Client(selected_hub, { testnet: (!!this.config.is_testnet) });
 			const wif = toWif(Buffer.from(this.previous_master_private_key_b64, 'base64'), true);
 
@@ -216,9 +216,6 @@ export default {
 		var production_private_key_b64;
 		if (this.config.action == 'renew_set_of_keys' || this.config.action == 'renew_production_key'){
 
-			const previous_production_private_hd_key = new bitcore.HDPrivateKey(Buffer.from(this.previous_production_private_hd_key_b64, 'base64'));
-			const previous_master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.previous_master_private_key_b64, 'base64')).toString('base64');
-		
 			const selected_hub = this.config.is_testnet ? hub_testnet : hub;
 			this.arr_initialization_logs.push("Connect to hub " + selected_hub );
 			const client = new obyte_js.Client((this.config.is_testnet ? hub_testnet : hub), { testnet: (!!this.config.is_testnet) });
@@ -226,12 +223,18 @@ export default {
 			this.checkSolvency(client, (err)=>{
 				if (err)
 					return this.error = err;
+
+				const previous_production_private_hd_key = new bitcore.HDPrivateKey(Buffer.from(this.previous_production_private_hd_key_b64, 'base64'));
+				const previous_master_public_key_b64 = secp256k1.publicKeyCreate(Buffer.from(this.previous_master_private_key_b64, 'base64')).toString('base64');
+				
 				this.determineLastDerivationIndex(client, previous_master_public_key_b64, previous_production_private_hd_key, (err, index, array_former_definition) => {
 					if (err)
 						return this.error = err;
 
 					this.arr_initialization_logs.push("Current derivation index: " + index);
 					this.array_former_definition = array_former_definition;
+
+					//if we are renewing production key, we create the new one by derivating using the next index then we determine the chash of the new definition
 					if ( this.config.action == 'renew_production_key'){
 						this.arr_initialization_logs.push("New production key will be derived from index " + (index + 1));
 						const production_private_key = previous_production_private_hd_key.derive('m/' + (index + 1)).privateKey;
@@ -241,7 +244,7 @@ export default {
 						this.keys_set_properties.arrDefinition = getArrDefinition(master_public_key_b64, production_public_key_b64);
 						this.keys_set_properties.definition_chash = getChash160(this.keys_set_properties.arrDefinition);
 
-					} else{
+					} else { // if we are renewing a set of key, the key is derivated using index 0
 						production_private_key_b64 = this.production_private_hd_key.derive('m/0').privateKey.toBuffer().toString('base64');
 					}
 					this.arr_initialization_logs.push("Close connection");

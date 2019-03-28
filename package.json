@@ -42,6 +42,7 @@
 			"eslint:recommended"
 		],
 		"rules": {
+			"vue/require-v-for-key": 0,
 			"no-console": 0,
 			"indent": [
 				"error",
