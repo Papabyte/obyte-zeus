@@ -21,7 +21,7 @@
 <script>
 
 const generatePassphrase = require('eff-diceware-passphrase')
-const aes256 = require('aes256');
+const crypto = require('crypto');
 import { passphrase_length } from '../modules/conf.js'
 
 export default {
@@ -72,12 +72,21 @@ export default {
 			document.body.appendChild(link)
 			link.click()
 			this.onDownload();
-		}
+		},
+		encrypt: function(passphrase, data) {
+			const sha256 = crypto.createHash('sha256');
+			sha256.update(passphrase);
 
+			const iv = crypto.randomBytes(16);
+			const cipher = crypto.createCipheriv("aes-256-ctr", sha256.digest(), iv);
+
+			const ciphertext = cipher.update(new Buffer(data));
+			return Buffer.concat([iv, ciphertext, cipher.final()]).toString('base64');
+		}
 	},
 	created: function(){
 		this.passphrase = generatePassphrase(passphrase_length).join(" ");
-		this.encrypted_data = aes256.encrypt(this.passphrase, this.data);
+		this.encrypted_data = this.encrypt(this.passphrase, this.data);
 		this.jsonString = JSON.stringify({
 			type: this.type, 
 			encryption: "AES256", 
@@ -87,7 +96,7 @@ export default {
 			keys_set_properties: this.keys_set_properties
 		});
 
-		var data = new Blob([this.jsonString], {type: "application/json"});
+		const data = new Blob([this.jsonString], {type: "application/json"});
 		// If we are replacing a previously generated file we need to
 		// manually revoke the object URL to avoid memory leaks.
 		if (this.url !== null) {

@@ -6,9 +6,6 @@
 				<img v-show="arrStatuses[index-1]" src="icon-valid.svg" height="20px">
 			</div>
 		</div>
-		<div v-if="is_passphrase_complete">
-		
-		</div>
 	</div>
 
 </template>
@@ -16,7 +13,7 @@
 <script>
 
 const dictionary = require('eff-diceware-passphrase/wordlist.json');
-const aes256 = require('aes256');
+const crypto = require('crypto');
 
 export default {
 	name: 'InputPassphraseAndDecrypt',
@@ -55,10 +52,17 @@ export default {
 	methods: {
 		//decrypt then emit event for parent component
 		decrypt: function(){
-			var decrypted_data = aes256.decrypt(this.arrWords.join(" "), this.objFromFile.encrypted_data);
-			this.$emit("decrypted", decrypted_data);
-		}
 
+			const sha256 = crypto.createHash('sha256');
+			sha256.update(this.arrWords.join(" "));
+
+			const input = new Buffer(this.objFromFile.encrypted_data, 'base64');
+			const iv = input.slice(0, 16);
+			const decipher = crypto.createDecipheriv('aes-256-ctr', sha256.digest(), iv);
+			const decrypted_data = decipher.update(input.slice(16)) + decipher.final();
+			this.$emit("decrypted", decrypted_data);
+
+		}
 	},
 	created: function(){
 		//we create arrays for words and their status
@@ -66,9 +70,7 @@ export default {
 			this.arrStatuses[i] = false;
 			this.arrWords[i] = "";
 		}
-
 	}
-
 }
 </script>
 
