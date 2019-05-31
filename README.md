@@ -1,4 +1,4 @@
-# obyte-zeus (works only on testnet for now)
+# obyte-zeus
 
 ## Introduction
 This is a **web-application** that can be used by people without specific knowledge to generate a special type of address for O<sub>byte</sub> called **Zeus address**. These addresses are controlled by two different types of key that has a hierarchy. The purpose is for the management of a company to be able to revoke the keys they entrusted to their team.
@@ -12,7 +12,7 @@ Although it is mainly intended for application that primarly posts data into O<s
 
 #### From O<sub>byte</sub> server (less secure)
 
-- Go to zeus.papabyte.com
+- Go to (zeus.papabyte.com)
 - Follow instructions
 
 
@@ -46,3 +46,8 @@ If eveything went well this should appear on your console:
 
 Click on the link provided to open the application in your browser.
 
+
+## Production key deployment
+
+The production key is to be deployed with this module: (https://github.com/Papabyte/headless-zeus-address)
+It's a replacement for headless-obyte.

@@ -9,7 +9,7 @@
 	},
 	"dependencies": {
 		"bitcore-lib": "^8.1.1",
-		"obyte": "0.1.3",
+		"obyte": "0.1.4",
 		"eff-diceware-passphrase": "1.0.0",
 		"install": "^0.12.2",
 		"node-sass": "^4.11.0",
